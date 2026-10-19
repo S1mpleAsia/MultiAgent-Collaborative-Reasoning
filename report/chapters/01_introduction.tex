@@ -1,0 +1,62 @@
+\chapter{GIỚI THIỆU}
+\label{chap:intro}
+
+\section{Bối cảnh}
+
+Các mô hình ngôn ngữ lớn (\LLM) đã đạt năng lực đáng kể trong hiểu và sinh ngôn ngữ, lập luận toán học, lập trình và trả lời câu hỏi. Tuy nhiên, một mô hình đơn lẻ vẫn gặp nhiều giới hạn: dễ sinh hallucination, khó tự kiểm tra lại lập luận, khó xử lý các tác vụ dài nhiều bước và khó kết hợp nhiều nguồn tri thức hoặc nhiều phương thức dữ liệu khác nhau. Một hướng tiếp cận tự nhiên là tổ chức \emph{nhiều} agent dựa trên \LLM{} thành một hệ thống, trong đó mỗi agent đảm nhận một vai trò (người lập kế hoạch, người lập trình, người phản biện, chuyên gia miền,~\ldots) và các agent trao đổi thông điệp để cùng đi đến lời giải. Đây là ý tưởng cốt lõi của LLM-based Multi-Agent Systems (\MAS) và của \emph{collaborative reasoning}.
+
+Từ các khung như CAMEL~\cite{camel}, AutoGen~\cite{autogen}, MetaGPT~\cite{metagpt} đến cơ chế multi-agent debate~\cite{du2024debate}, cộng đồng nghiên cứu đã chỉ ra rằng sự cộng tác có thể cải thiện tính đúng đắn sự kiện và khả năng lập luận. Các công trình tiếp theo như GPTSwarm~\cite{gptswarm}, G-Designer~\cite{gdesigner} hay AgentPrune~\cite{agentprune} coi \MAS{} như một \emph{communication graph} có thể tối ưu được. Đến năm 2026, khi \MAS{} được triển khai rộng rãi hơn, các câu hỏi nghiên cứu trở nên thực tế và khó hơn:
+\begin{itemize}
+  \item \textbf{Hiệu quả:} chạy nhiều agent tốn kém (token, năng lượng GPU, độ trễ). Làm sao chọn đúng mô hình cho đúng agent ở đúng thời điểm?
+  \item \textbf{Luồng thông tin:} lịch sử hội thoại giữa các agent tăng rất nhanh. Làm sao để mỗi agent chú ý đúng vào thông tin liên quan?
+  \item \textbf{An toàn và độ tin cậy:} một agent sai, bị thao túng hoặc nói dối có thể kéo cả hệ thống đi sai. Cấu trúc hệ thống có thể bị kẻ tấn công suy ra và khai thác.
+  \item \textbf{Ứng dụng:} làm sao áp dụng mô hình cộng tác vào các miền chuyên sâu như y tế hay đô thị, nơi dữ liệu đa phương thức và mâu thuẫn giữa các nguồn là phổ biến?
+\end{itemize}
+
+\section{Mục tiêu và phạm vi khảo sát}
+
+Báo cáo thực hiện theo hình thức \emph{tiểu luận} của học phần IT4772, với chủ đề số 3: \emph{Multi-Agent Systems và Collaborative Reasoning}. Mục tiêu gồm:
+\begin{enumerate}
+  \item Tổng quan và phân loại các nghiên cứu theo hướng tiếp cận chính.
+  \item Trình bày đóng góp của từng nghiên cứu tiêu biểu.
+  \item So sánh, đánh giá có hệ thống về phương pháp, dữ liệu, kết quả, ưu điểm, hạn chế và phạm vi áp dụng.
+  \item Chỉ ra khoảng trống nghiên cứu và đề xuất hướng phát triển.
+\end{enumerate}
+
+\paragraph{Phương pháp chọn bài.} Nhóm truy vấn kho arXiv với các bài có cụm từ ``multi-agent'' và ``collaborative reasoning'' trong phần tóm tắt, sắp xếp theo ngày nộp mới nhất, và chọn tám bài mới nhất (nộp từ 28/05/2026 đến 29/09/2026). Cách chọn này ưu tiên tính \emph{thời sự}, phản ánh các hướng mà cộng đồng đang quan tâm tại thời điểm thực hiện báo cáo. Hệ quả là tập bài khá đa dạng: có bài phương pháp tổng quát, có bài về an toàn, và có bài ứng dụng chuyên ngành. Sự đa dạng này vừa là thách thức cho việc so sánh trực tiếp, vừa cho phép nhìn được bức tranh rộng của lĩnh vực. Danh sách tám bài được liệt kê ở Bảng~\ref{tab:paperlist}.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Tám nghiên cứu được khảo sát (sắp theo ngày nộp lên arXiv, mới nhất trước).}
+\label{tab:paperlist}
+\begin{tabularx}{\textwidth}{c L{2.75cm} Y c}
+\toprule
+\textbf{\#} & \textbf{Tên gọi} & \textbf{Tiêu đề} & \textbf{arXiv} \\
+\midrule
+1 & MIRAGE~\cite{p1mirage} & Concealing LLM-Based Multi-Agent Topology via Phantom Structure Injection & 2609.37567 \\
+2 & MAC-RRG~\cite{p2macrrg} & MAC-RRG: Iterative Multi-Agent Collaboration for X-ray Radiology Report Generation & 2609.26124 \\
+3 & ProgRouter~\cite{p3progrouter} & ProgRouter: Online Progress-Guided Orchestration for Multi-Agent LLM Workflows under Quality-Cost Tradeoffs & 2608.25992 \\
+4 & TIDE~\cite{p4tide} & When Truth Is Distributed: Misinformation Derails Collective Fact Recovery in LLM-Based Multi-Agent Systems & 2608.03421 \\
+5 & HalluProp~\cite{p5halluprop} & Before Agents Speak: Pre-hoc Failure Risk Inference in Multi-Agent Systems & 2607.26836 \\
+6 & UrbanAgent~\cite{p6urban} & Multi-Agent Collaborative Reasoning with Tool-Augmented Evidence for Urban Region Profiling & 2607.13558 \\
+7 & DAIN~\cite{p7dain} & DAIN: Dynamic Agent-Based Interaction Network for Efficient and Collaborative Multimodal Reasoning & 2606.30189 \\
+8 & AGENT-RADAR~\cite{p8radar} & Enhancing Multi-Agent Communication through Attention Steering with Context Relevance & 2605.30136 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Lưu ý về nguồn.} Phần lớn các bài là bản tiền ấn phẩm (preprint) chưa qua bình duyệt; chỉ UrbanAgent ghi rõ được chấp nhận tại KDD~2026. Một số bảng số liệu và hình trong bản PDF bị biến dạng khi trích xuất văn bản; những số liệu mà nhóm không chắc chắn đều được ghi chú rõ hoặc không đưa vào báo cáo.
+
+\section{Đóng góp của báo cáo}
+
+\begin{itemize}
+  \item Đề xuất một \textbf{khung phân loại} bốn nhóm cho tám nghiên cứu, kèm \emph{ma trận multi-label} cho thấy các bài thường thuộc nhiều nhóm cùng lúc, và một \textbf{lược đồ vòng đời} \MAS{} cho biết mỗi phương pháp can thiệp vào giai đoạn nào (trước khi chạy, trong khi chạy, khi giao tiếp, khi phơi bày kết quả).
+  \item Tóm tắt có cấu trúc và \textbf{đánh giá phản biện} từng nghiên cứu, trong đó chỉ ra cả những điểm yếu mà tác giả không nêu (ví dụ: không báo cáo phương sai, số liệu không nhất quán giữa các bảng, điều chỉnh siêu tham số trên tập kiểm thử).
+  \item \textbf{So sánh hệ thống} theo bảy chiều và rút ra các xu hướng xuyên suốt.
+  \item Xác định \textbf{khoảng trống nghiên cứu} và đề xuất hướng phát triển cụ thể.
+\end{itemize}
+
+\section{Cấu trúc báo cáo}
+
+Chương~\ref{chap:background} trình bày kiến thức nền về \MAS{} dựa trên \LLM{} và collaborative reasoning. Chương~\ref{chap:taxonomy} đề xuất khung phân loại. Chương~\ref{chap:papers} trình bày chi tiết tám nghiên cứu theo bốn nhóm. Chương~\ref{chap:comparison} so sánh và đánh giá có hệ thống. Chương~\ref{chap:gaps} thảo luận khoảng trống nghiên cứu và hướng phát triển. Chương~\ref{chap:conclusion} kết luận. Chương~\ref{chap:contrib} trình bày đóng góp của từng thành viên.

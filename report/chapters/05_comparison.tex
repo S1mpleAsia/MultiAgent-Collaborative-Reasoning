@@ -1,0 +1,209 @@
+\chapter{SO SÁNH VÀ ĐÁNH GIÁ CÓ HỆ THỐNG}
+\label{chap:comparison}
+
+Nếu Chương~\ref{chap:papers} so sánh từng cặp nghiên cứu trong cùng một nhóm, thì chương này đặt cả tám nghiên cứu cạnh nhau. Các chiều so sánh gồm: phương pháp (\S\ref{sec:cmp-method}), dữ liệu và độ đo (\S\ref{sec:cmp-data}), thiết lập thực nghiệm (\S\ref{sec:cmp-setup}), kết quả và chi phí (\S\ref{sec:cmp-result}), ưu điểm -- hạn chế -- phạm vi áp dụng (\S\ref{sec:cmp-proscons}) và độ tin cậy của bằng chứng (\S\ref{sec:cmp-evidence}). Cuối chương thảo luận các xu hướng xuyên suốt (\S\ref{sec:cmp-trends}).
+
+\section{So sánh về phương pháp}
+\label{sec:cmp-method}
+
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\caption{So sánh phương pháp.}
+\label{tab:cmp-method}
+\begin{tabularx}{\textwidth}{L{1.9cm} L{2.0cm} L{2.4cm} C{1.5cm} C{1.4cm} Y}
+\toprule
+\textbf{Nghiên cứu} & \textbf{Loại đóng góp} & \textbf{Cơ chế cốt lõi} & \textbf{Cần huấn luyện} & \textbf{Cần hộp trắng} & \textbf{Backbone} \\
+\midrule
+\#1 MIRAGE & Phòng thủ & Đồ thị ảo + diễn đạt lại & Không & Không & Không nêu trong thân bài \\
+\#4 TIDE & Khung đánh giá & Môi trường hidden profile có lừa dối & Không & Không & GPT-5.5, DeepSeek-v4-pro, Grok-4.5 \\
+\#3 ProgRouter & Bộ điều phối & Chấm tiến độ + dự báo + Lyapunov & Trực tuyến (nhẹ) & Không & Qwen, Granite, Gemma (0.5B--35B); điều phối 80B \\
+\#5 HalluProp & Risk predictor & Noisy-OR khả vi trên đồ thị & Có (giám sát) & Không & GPT-3.5/4o, Llama-3-8B, Qwen-2-7B \\
+\#7 DAIN & Kiến trúc kết hợp & Cổng thưa + soft communication graph & Có (đầu-cuối) & --- & ResNet-50, BERT-base \\
+\#8 AGENT-RADAR & Mô-đun cắm thêm & Chấm điểm không gian $\times$ thời gian $\times$ ngữ nghĩa + SPA & Không & \textbf{Có} & Qwen3-4B/32B, Llama-3.1-8B \\
+\#2 MAC-RRG & Hệ thống ứng dụng & Nháp + 2 nguồn tri thức + tinh chỉnh & Có & --- & Swin, Llama2-7B \\
+\#6 UrbanAgent & Hệ thống ứng dụng & Agent dùng công cụ (SFT+GRPO) + GNN quan hệ & Có & --- & Qwen3-VL-4B \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Nhận xét.}
+\begin{itemize}
+  \item \textbf{Không cần huấn luyện vs. cần huấn luyện.} MIRAGE, TIDE và AGENT-RADAR hoạt động không cần huấn luyện, dễ cắm vào hệ có sẵn. ProgRouter chỉ học các cây hồi quy nhẹ theo kiểu trực tuyến. HalluProp, DAIN, MAC-RRG và UrbanAgent cần dữ liệu có nhãn, nên khả năng chuyển giao là câu hỏi mở.
+  \item \textbf{Hộp đen vs. hộp trắng.} AGENT-RADAR là phương pháp duy nhất \emph{bắt buộc} truy cập logit/chú ý, nên không áp dụng được với các LLM thương mại qua API -- trong khi phần lớn \MAS{} thực tế dùng loại mô hình này. Ngược lại, MIRAGE, ProgRouter, HalluProp tương thích với mô hình hộp đen.
+  \item \textbf{Đối tượng được tối ưu.} ProgRouter tối ưu \emph{việc chọn mô hình}; DAIN tối ưu \emph{việc chọn agent và cường độ kết nối}; AGENT-RADAR tối ưu \emph{việc chọn nội dung để chú ý}; HalluProp chỉ ra \emph{agent/cạnh cần can thiệp}; MIRAGE thay đổi \emph{cái được phơi bày} chứ không thay đổi cái được thực thi.
+  \item \textbf{Kỹ thuật lặp lại.} Hai ý tưởng xuất hiện nhiều lần: (a) \emph{truyền thông điệp trên đồ thị} (HalluProp -- Noisy-OR; DAIN -- low-rank bottleneck; UrbanAgent -- GNN quan hệ); (b) \emph{bộ mã hóa câu nhỏ} (MiniLM, BERT) để đo semantic relevance với chi phí thấp (ProgRouter, HalluProp, AGENT-RADAR).
+\end{itemize}
+
+\section{So sánh về dữ liệu và thiết lập đánh giá}
+\label{sec:cmp-data}
+
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\caption{So sánh dữ liệu, độ đo và độ nghiêm ngặt thực nghiệm.}
+\label{tab:cmp-data}
+\begin{tabularx}{\textwidth}{L{1.9cm} Y L{2.6cm} C{1.3cm} C{1.9cm}}
+\toprule
+\textbf{Nghiên cứu} & \textbf{Dữ liệu / benchmark} & \textbf{Độ đo chính} & \textbf{Quy mô MAS} & \textbf{Phương sai / kiểm định} \\
+\midrule
+\#1 MIRAGE & MMLU, GSM8K, SVAMP, HumanEval (100 tác vụ/tập) & AUC/ACC/F1 của cạnh suy ra & 3--7 agent & Không \\
+\#4 TIDE & 120 môi trường Hi-ToM $\times$ 2 điều kiện $\times$ 3 mô hình & Đa số đúng/decoy, evidence lineage, propagation order & 5 (+3) & \textbf{Có} (bootstrap, McNemar) \\
+\#3 ProgRouter & HumanEval+, MBPP, MATH-500, ASQA & Độ chính xác, năng lượng J, thời gian & Điều phối + nhiều vai trò & Không \\
+\#5 HalluProp & MMLU, MATH, MedQA (500 câu/tập) & AUROC, Hit@k, độ chính xác sau can thiệp & 3--7 & Không \\
+\#7 DAIN & ADNI, MIMIC-IV, MM-IMDB, MOSI, ENRICO & Accuracy, MSE, số agent kích hoạt & 8 mô-đun & Nêu có (5 seed) nhưng bảng không có \\
+\#8 AGENT-RADAR & HotpotQA, 2Wiki, MuSiQue, MATH-500, MMLU-Pro & F1, accuracy, thời gian & 5--6 & Không \\
+\#2 MAC-RRG & IU X-Ray, MIMIC-CXR, CheXpert Plus & BLEU, ROUGE-L, METEOR, CIDEr, CE & 2 mô-đun & Không \\
+\#6 UrbanAgent & 2\,000 vị trí toàn cầu + 200 vị trí thành phố mới & $R^2$, Spearman & 4 & Không \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Nhận xét.}
+\begin{itemize}
+  \item \textbf{Benchmark lặp lại:} MMLU, MATH/GSM8K và các bộ QA nhiều bước là ``mặt bằng chung'' của các bài phương pháp (\#1, \#5, \#8). Tuy vậy, mỗi bài dùng một tập con, một cấu trúc và backbone khác nhau nên \emph{không thể so sánh trực tiếp con số giữa các bài}.
+  \item \textbf{Quy mô nhỏ:} hầu hết các \MAS{} được thử nghiệm có 3--8 agent và 2--3 vòng. Không bài nào thử nghiệm hệ hàng chục agent hay tác vụ dài hạn (web, lập trình nhiều tệp).
+  \item \textbf{Độ nghiêm ngặt thống kê:} chỉ TIDE có kiểm định thống kê đầy đủ. Các bài còn lại không báo cáo phương sai, trong khi một số chạy với nhiệt độ sinh khác 0 (AGENT-RADAR: 1.0; HalluProp: 0.7) và mức cải thiện chỉ 1--3 điểm -- có thể nằm trong khoảng nhiễu.
+  \item \textbf{Rủi ro rò rỉ đánh giá:} AGENT-RADAR điều chỉnh siêu tham số trên MuSiQue -- cũng là tập kiểm thử; MAC-RRG chọn checkpoint dựa trên độ đo đánh giá; ProgRouter chỉ báo cáo sau giai đoạn ổn định.
+\end{itemize}
+
+\section{So sánh thiết lập thực nghiệm}
+\label{sec:cmp-setup}
+
+Để biết các kết quả có so sánh được với nhau hay không, cần đặt cạnh nhau \emph{điều kiện} mà mỗi bài thử nghiệm: dùng model nào, bao nhiêu agent, bao nhiêu vòng, topology ra sao và quy mô dữ liệu đến đâu (Bảng~\ref{tab:cmp-setup}).
+
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\caption{So sánh thiết lập thực nghiệm của tám nghiên cứu.}
+\label{tab:cmp-setup}
+\begin{tabularx}{\textwidth}{L{1.9cm} Y C{1.75cm} C{1.4cm} L{2.4cm} L{2.2cm}}
+\toprule
+\textbf{Nghiên cứu} & \textbf{Backbone} & \textbf{Số agent} & \textbf{Số vòng} & \textbf{Topology} & \textbf{Quy mô dữ liệu} \\
+\midrule
+\#1 MIRAGE & Không nêu trong thân bài & 3--7 & 1 lượt DAG & DAG từ G-Designer, AGP, ARG-Designer & 4 tập $\times$ 100 tác vụ \\
+\#4 TIDE & GPT-5.5, DeepSeek-v4-pro, Grok-4.5 & 5 (+3 observer) & T0, T1, R1--R3 & Kết nối đầy đủ + kênh riêng & 120 môi trường $\times$ 2 điều kiện $\times$ 3 model \\
+\#3 ProgRouter & Qwen, Granite, Gemma (0.5B--35B); coordinator 80B & 1 coordinator + các worker & Nhiều bước & Phân cấp (ledger) & 164 / 200 / 200 / 100 tác vụ \\
+\#5 HalluProp & GPT-3.5, GPT-4o, Llama-3-8B, Qwen-2-7B & 3--7 & 3 & Ngẫu nhiên; sao, chuỗi, phân cấp & 3 tập $\times$ 500 câu \\
+\#7 DAIN & ResNet-50, BERT-base (không LLM) & 8 mô-đun & 1 & Soft graph học được & 5 tập dữ liệu \\
+\#8 AGENT-RADAR & Qwen3-4B; Llama-3.1-8B, Qwen3-32B & 5 (tối đa 6) & 2--3 & Ngẫu nhiên, phân lớp, đầy đủ, debate & 5 benchmark \\
+\#2 MAC-RRG & Swin + Llama2-7B & 2 mô-đun & 1 lượt tinh chỉnh & Dây chuyền cố định & 3 tập X-quang \\
+\#6 UrbanAgent & Qwen3-VL-4B & 4 & 5 (GRU) & Đồ thị quan hệ 3 loại cạnh & 2\,000 + 200 vị trí \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Nhận xét.}
+\begin{itemize}
+  \item \textbf{Mô hình nhỏ chiếm ưu thế.} Trừ TIDE dùng các model thương mại lớn, các bài phương pháp chủ yếu thử với model mở cỡ 4B--8B. Điều này hợp lý về chi phí nhưng chưa cho biết phương pháp còn giá trị khi backbone mạnh hơn hay không; AGENT-RADAR là bài hiếm hoi thử thêm model 32B, và mức cải thiện ở đó nhỏ hơn rõ rệt (MuSiQue +3.5 F1 so với +7.1 F1 trên Llama-3.1-8B).
+  \item \textbf{Hệ thống nhỏ, hội thoại ngắn.} Không bài nào vượt quá 8 agent hay 5 vòng. Các hiện tượng như lan truyền lỗi (TIDE, HalluProp) hay quá tải ngữ cảnh (AGENT-RADAR) được kỳ vọng mạnh hơn nhiều ở quy mô lớn, nên kết quả hiện tại có thể đang \emph{đánh giá thấp} vấn đề.
+  \item \textbf{Topology đa dạng nhưng không thống nhất.} Mỗi bài dùng một kiểu topology khác nhau, nên một phương pháp tốt trên đồ thị ngẫu nhiên (HalluProp, AGENT-RADAR) chưa chắc giữ được ưu thế trên topology phân cấp có điều phối viên như ProgRouter.
+\end{itemize}
+
+\section{So sánh về kết quả và chi phí}
+\label{sec:cmp-result}
+
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\caption{Kết quả nổi bật và mức độ báo cáo chi phí.}
+\label{tab:cmp-result}
+\begin{tabularx}{\textwidth}{L{1.9cm} Y L{3.6cm}}
+\toprule
+\textbf{Nghiên cứu} & \textbf{Kết quả nổi bật} & \textbf{Chi phí được báo cáo} \\
+\midrule
+\#1 MIRAGE & AUC tấn công giảm xuống 0.64--0.68 (G-Designer), so với 0.70--0.81 của phòng thủ dựa trên prompt & Không \\
+\#4 TIDE & Đa số đúng giảm 72.50\% $\to$ 14.17\% khi có một deceiver & Không \\
+\#3 ProgRouter & 93.0\% HumanEval+, 79.4\% MBPP trong ngân sách; thua CASCADIA 3.5 điểm trên MATH-500 & \textbf{Có}: năng lượng (J) và thời gian, đo thực \\
+\#5 HalluProp & AUROC 84.6; độ chính xác sau can thiệp 67.6\% so với 63.5\% (GUARDIAN) & Có: $<$1 giây/chẩn đoán (không tính huấn luyện) \\
+\#7 DAIN & Vượt MoE/MMoE 1.3--2.6 điểm; 3.2--5.5/8 agent kích hoạt & Một phần: số tham số (có mâu thuẫn) \\
+\#8 AGENT-RADAR & +7.64 F1 HotpotQA, +6.2 MATH-500 so với AgentDropout; tối đa +12.87 F1 khi cắm vào GPTSwarm & Có: +23\% thời gian; không báo cáo token \\
+\#2 MAC-RRG & BLEU-4 cao nhất trên 3 tập; F1 lâm sàng 0.295 so với 0.260 & Không \\
+\#6 UrbanAgent & $R^2$ tăng trung bình 8.1\%; chuyển giao tốt sang thành phố mới & Không (chỉ giới hạn 4 lượt gọi công cụ) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Nhận xét.} Chi phí -- một trong những lý do chính khiến \MAS{} khó triển khai -- chỉ được đo nghiêm túc ở ProgRouter (năng lượng GPU thực) và một phần ở AGENT-RADAR (thời gian). Các phương pháp phòng thủ (MIRAGE) và ứng dụng (MAC-RRG, UrbanAgent) đều thêm nhiều lần gọi mô hình hoặc công cụ nhưng không báo cáo chi phí phát sinh. Một quan sát đáng chú ý từ ProgRouter là chiến lược hiệu quả thường dùng mô hình rất nhỏ cho phần lớn các bước (84.3\% lần gọi dùng mô hình 0.5B trên HumanEval+), gợi ý rằng phần lớn công việc trong quy trình multi-agent không đòi hỏi mô hình lớn.
+
+\section{Ưu điểm, hạn chế và phạm vi áp dụng}
+\label{sec:cmp-proscons}
+
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\caption{Tổng hợp ưu điểm, hạn chế chính và phạm vi áp dụng.}
+\label{tab:cmp-proscons}
+\begin{tabularx}{\textwidth}{L{2.0cm} Y Y L{2.8cm}}
+\toprule
+\textbf{Nghiên cứu} & \textbf{Ưu điểm chính} & \textbf{Hạn chế chính} & \textbf{Phạm vi áp dụng} \\
+\midrule
+\#1 MIRAGE & Bài toán mới (bí mật cấu trúc); không đổi tính toán thật & Chỉ 1 tấn công, không có kẻ tấn công thích nghi; che giấu chưa hoàn toàn & \MAS{} dạng DAG có phơi bày vết lập luận \\
+\#4 TIDE & Thiết kế thực nghiệm chặt; đo quá trình, không chỉ kết quả & Một tác vụ hẹp; không đề xuất phòng thủ & Kiểm toán \MAS{} gộp bằng chứng phân tán \\
+\#3 ProgRouter & Routing theo bước; đo năng lượng thực; không cần dữ liệu ngoại tuyến & Mốc tiến độ cần định nghĩa thủ công; bỏ qua chi phí khởi động & Quy trình coordinator -- thực thi với model zoo mở \\
+\#5 HalluProp & Pre-hoc, cực nhanh, dễ giải thích & Có giám sát; vai trò bị nhiễu nhân tạo; đồ thị nhỏ & Sàng lọc cấu hình vai trò/cấu trúc trước triển khai \\
+\#7 DAIN & Sparse activation; diễn giải được theo PID & Không phải LLM agent; số liệu thiếu nhất quán & Phân loại/hồi quy đa phương thức có giám sát \\
+\#8 AGENT-RADAR & Không mất thông tin; không cần huấn luyện; cải thiện nhất quán & Cần hộp trắng; không giảm token; rủi ro rò rỉ siêu tham số & \MAS{} văn bản dùng LLM mã nguồn mở \\
+\#2 MAC-RRG & Kết hợp tri thức cấu trúc + phi cấu trúc; cải thiện CE & ``Agent'' chỉ là mô-đun retrieval; cải thiện nhỏ & Sinh văn bản y khoa có neo tri thức \\
+\#6 UrbanAgent & Mô hình hóa mâu thuẫn tường minh; RL cho dùng công cụ & Dữ liệu nhỏ; tổng hợp bằng GNN cần nhãn & Dự đoán đa góc nhìn có dữ liệu mâu thuẫn \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Đánh giá độ tin cậy của bằng chứng thực nghiệm}
+\label{sec:cmp-evidence}
+
+Mục này đánh giá \emph{chất lượng bằng chứng} mà mỗi bài đưa ra, thay vì độ lớn của con số. Nhóm dùng năm tiêu chí: (1) baseline có mạnh và phù hợp không; (2) có thí nghiệm loại bỏ (ablation) để tách đóng góp từng thành phần không; (3) có báo cáo phương sai hoặc kiểm định thống kê không; (4) có đo chi phí không; (5) kết quả có được kiểm tra trên nhiều model, miền hoặc dữ liệu mới không. Mỗi tiêu chí được chấm ba mức: \textbf{$\bullet$} đầy đủ, \textbf{$\circ$} một phần, \textbf{--} không có (Bảng~\ref{tab:cmp-evidence}).
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Đánh giá độ tin cậy của bằng chứng thực nghiệm ($\bullet$ đầy đủ, $\circ$ một phần, -- không có).}
+\label{tab:cmp-evidence}
+\begin{tabular}{l C{1.6cm} C{1.6cm} C{1.9cm} C{1.4cm} C{1.9cm}}
+\toprule
+\textbf{Nghiên cứu} & \textbf{Baseline} & \textbf{Ablation} & \textbf{Phương sai / kiểm định} & \textbf{Chi phí} & \textbf{Tổng quát hoá} \\
+\midrule
+\#1 MIRAGE      & $\circ$   & $\bullet$ & --        & --        & $\circ$   \\
+\#4 TIDE        & $\circ$   & $\bullet$ & $\bullet$ & --        & $\circ$   \\
+\#3 ProgRouter  & $\bullet$ & $\circ$   & --        & $\bullet$ & $\circ$   \\
+\#5 HalluProp   & $\circ$   & $\bullet$ & --        & $\circ$   & $\circ$   \\
+\#7 DAIN        & --        & $\bullet$ & --        & $\circ$   & $\circ$   \\
+\#8 AGENT-RADAR & $\bullet$ & $\bullet$ & --        & $\circ$   & $\bullet$ \\
+\#2 MAC-RRG     & $\bullet$ & $\bullet$ & --        & --        & $\circ$   \\
+\#6 UrbanAgent  & $\bullet$ & $\circ$   & --        & --        & $\bullet$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Giải thích một số đánh giá.}
+\begin{itemize}
+  \item \textbf{Baseline.} MIRAGE chỉ so với các phòng thủ prompt-injection chung vì chưa có phòng thủ chuyên biệt cho bài toán mới; TIDE so sánh các điều kiện ghép cặp thay vì phương pháp; HalluProp so với các phương pháp hậu nghiệm vốn là phương pháp \emph{giảm thiểu}, không phải \emph{phát hiện}; DAIN chỉ so với MoE và các cách kết hợp cũ.
+  \item \textbf{Ablation.} ProgRouter chỉ làm ablation trên HumanEval+; UrbanAgent chủ yếu trình bày ablation dưới dạng hình, ít số liệu cụ thể.
+  \item \textbf{Phương sai.} Đây là điểm yếu chung nhất: chỉ TIDE có kiểm định thống kê đầy đủ. DAIN tuyên bố dùng 5 seed nhưng bảng kết quả không có độ lệch chuẩn.
+  \item \textbf{Chi phí.} ProgRouter đo năng lượng GPU thực; AGENT-RADAR đo thời gian; HalluProp đo thời gian chẩn đoán nhưng bỏ qua huấn luyện; DAIN chỉ đếm tham số và phép cộng không khớp.
+  \item \textbf{Tổng quát hoá.} AGENT-RADAR thử trên 3 framework, 4 topology và 3 backbone; UrbanAgent thử trên thành phố chưa thấy. Các bài còn lại chỉ thử trong miền.
+\end{itemize}
+
+Nhìn tổng thể, AGENT-RADAR và ProgRouter có bằng chứng thực nghiệm cân đối nhất trong các bài phương pháp; TIDE có thiết kế thống kê chặt nhất nhưng phạm vi hẹp; DAIN có bằng chứng yếu nhất do baseline cũ và số liệu không nhất quán. Đánh giá này nên được dùng khi trích dẫn các con số trong báo cáo: những kết quả thuộc các bài có nhiều ô ``--'' cần được xem là xu hướng, chưa phải kết luận chắc chắn.
+
+\section{Các xu hướng và nhận định xuyên suốt}
+\label{sec:cmp-trends}
+
+\subsection{Communication graph là đối tượng trung tâm}
+Dù mục tiêu khác nhau, sáu trên tám nghiên cứu thao tác trực tiếp trên communication graph: MIRAGE \emph{giấu} nó, HalluProp \emph{phân tích} propagation risk trên nó, AGENT-RADAR dùng \emph{khoảng cách} trên nó để chấm điểm, DAIN và UrbanAgent \emph{học} nó, TIDE \emph{truy vết} dòng chảy bằng chứng trên nó. Điều này khẳng định cách nhìn ``\MAS{} là đồ thị'' đã trở thành khung chuẩn của lĩnh vực, và topology vừa là đòn bẩy hiệu năng, vừa là bề mặt tấn công, vừa là kênh lan truyền rủi ro.
+
+\subsection{Lan truyền là rủi ro cốt lõi -- và thảo luận không tự sửa sai}
+TIDE và HalluProp, từ hai góc độ khác nhau, cùng chỉ ra rằng lỗi lan theo các communication edge. TIDE còn cho thấy một kết quả đáng lo ngại: thảo luận nhiều vòng \emph{khuếch đại} chiều hướng của bằng chứng ban đầu thay vì sửa sai, và thông tin sai được tiếp nhận nhiều hơn và lan xa hơn thông tin đúng. Kết quả này thách thức giả định ngầm của nhiều công trình về multi-agent debate rằng ``nhiều agent thảo luận thì sẽ đúng hơn''. Nó cũng gợi ý rằng các phương pháp như AGENT-RADAR -- vốn \emph{tăng cường} sự chú ý vào nội dung liên quan -- cần được đánh giá thêm trong điều kiện có deceiver: nếu thông tin sai cũng ``liên quan'' về ngữ nghĩa, liệu nó có bị khuếch đại thêm?
+
+\subsection{Đánh đổi chất lượng -- chi phí}
+ProgRouter, DAIN và AGENT-RADAR đều đặt câu hỏi về hiệu quả nhưng theo các cách khác nhau: chọn mô hình rẻ hơn, kích hoạt ít agent hơn, hay chú ý đúng chỗ hơn mà không cắt bớt ngữ cảnh. Một điểm chung là \emph{không cần dùng toàn bộ năng lực ở mọi lúc}: ProgRouter dùng chủ yếu mô hình nhỏ; DAIN chỉ dùng khoảng một nửa số agent; hiệu năng của DAIN đạt đỉnh ở ngân sách $\tau = 4$ chứ không phải $8$; AGENT-RADAR tốt nhất ở 5 agent chứ không phải nhiều hơn.
+
+\subsection{Mâu thuẫn giữa minh bạch và bảo mật}
+TIDE kết luận rằng hệ thống cần \emph{xác minh nguồn gốc bằng chứng và đường lan truyền một cách tường minh}, tức cần minh bạch về ai nói gì với ai. Ngược lại, MIRAGE cố tình \emph{che giấu và làm nhiễu} chính thông tin đó với người quan sát bên ngoài. Hai hướng không mâu thuẫn hoàn toàn (một bên là kiểm toán nội bộ, một bên là phơi bày ra ngoài), nhưng cho thấy thiết kế \MAS{} an toàn cần phân biệt rõ các ``góc nhìn'' khác nhau cho các bên khác nhau -- đúng như cơ chế dual-view của MIRAGE.
+
+\subsection{Khái niệm ``agent'' bị nới rộng}
+Như Bảng~\ref{tab:agentnature} cho thấy, ba trên tám bài (DAIN, MAC-RRG và một phần UrbanAgent) gọi các mô-đun nơ-ron hoặc mô-đun retrieval là ``agent''. Xu hướng gắn nhãn ``multi-agent'' cho các kiến trúc vốn là MoE hay RAG làm mờ ranh giới của lĩnh vực và gây khó cho việc so sánh. Nhóm đề xuất phân biệt rõ ít nhất ba cấp: (i) \emph{LLM agent tự trị} giao tiếp bằng ngôn ngữ; (ii) \emph{LLM agent có tổng hợp học được}; (iii) \emph{mô-đun chuyên biệt} được gọi là agent theo nghĩa ẩn dụ.
+
+\subsection{Ứng dụng chuyên ngành đi theo hướng ``học'' cộng tác}
+Hai bài ứng dụng (MAC-RRG, UrbanAgent) đều thay thế debate bằng ngôn ngữ bằng các cơ chế tổng hợp \emph{được huấn luyện} (ghép token, GNN). Lý do khả dĩ là trong các miền như y tế hay địa lý, đầu ra là số hoặc văn bản có cấu trúc chặt, có dữ liệu nhãn, và yêu cầu độ chính xác cao hơn tính linh hoạt. Điều này gợi ý một khoảng cách giữa ``\MAS{} tổng quát'' (không huấn luyện, giao tiếp bằng ngôn ngữ) và ``\MAS{} chuyên ngành'' (huấn luyện đầu-cuối).

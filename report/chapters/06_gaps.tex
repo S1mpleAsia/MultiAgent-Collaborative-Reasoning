@@ -1,0 +1,39 @@
+\chapter{KHOẢNG TRỐNG NGHIÊN CỨU VÀ HƯỚNG PHÁT TRIỂN}
+\label{chap:gaps}
+
+\section{Các khoảng trống nghiên cứu}
+
+\paragraph{G1. Thiếu chuẩn đánh giá thống nhất cho MAS.} Mỗi nghiên cứu tự chọn tập con dữ liệu, topology, số agent và backbone. Không có benchmark chung đo đồng thời \emph{chất lượng}, \emph{chi phí} và \emph{robustness}, nên không thể đặt các phương pháp như ProgRouter, AGENT-RADAR hay HalluProp cạnh nhau để so sánh.
+
+\paragraph{G2. Độ nghiêm ngặt thống kê thấp.} Bảy trên tám bài không báo cáo phương sai hay kiểm định ý nghĩa, dù \MAS{} vốn có tính ngẫu nhiên cao (nhiều lần lấy mẫu, nhiều agent). Các mức cải thiện 1--3 điểm vì vậy khó được khẳng định.
+
+\paragraph{G3. Quy mô nhỏ và tác vụ ngắn.} Các hệ được thử nghiệm có tối đa khoảng 8 agent và 2--5 vòng, chủ yếu trên trắc nghiệm, toán và QA. Hành vi ở quy mô hàng chục agent, tác vụ dài hạn có công cụ (duyệt web, lập trình nhiều tệp) gần như chưa được khảo sát. Nhiều kết quả có thể không còn đúng khi lịch sử dài hơn hoặc đồ thị lớn hơn.
+
+\paragraph{G4. Thiếu kẻ tấn công thích nghi và thiếu phòng thủ.} MIRAGE chỉ được thử với một tấn công cố định; TIDE đo tác hại nhưng không đề xuất phòng thủ; observer chỉ làm nhóm thận trọng hơn chứ không sửa được lỗi. Chưa có phương pháp nào chứng minh được khả năng \emph{khôi phục sự thật} khi có deceiver.
+
+\paragraph{G5. Tương tác giữa các nhóm chưa được nghiên cứu.} Các phương pháp tối ưu hiệu năng (AGENT-RADAR, ProgRouter) chưa được đánh giá dưới điều kiện đối kháng: cơ chế tăng cường nội dung ``liên quan'' có thể vô tình khuếch đại thông tin sai; router tiết kiệm có thể giao bước then chốt cho mô hình nhỏ dễ bị lừa. Ngược lại, các phương pháp an toàn (MIRAGE) chưa đo chi phí phát sinh.
+
+\paragraph{G6. Phụ thuộc vào thiết kế thủ công và dữ liệu có nhãn.} ProgRouter cần mốc tiến độ cho từng miền; DAIN cần phân bổ số agent theo loại thủ công; UrbanAgent cần ngưỡng cạnh chọn tay; HalluProp cần nhãn từ các lần chạy thật. Khả năng tổng quát hóa sang miền hoặc mô hình mới chưa được kiểm chứng.
+
+\paragraph{G7. Phụ thuộc vào truy cập hộp trắng.} Các kỹ thuật attention steering (AGENT-RADAR) không áp dụng được cho mô hình thương mại -- vốn chiếm phần lớn triển khai thực tế.
+
+\paragraph{G8. Thiếu định nghĩa thống nhất về ``agent''.} Như đã phân tích ở \S\ref{sec:cmp-trends}, việc gọi các mô-đun nơ-ron hay mô-đun retrieval là ``agent'' làm khó việc tích lũy tri thức trong lĩnh vực.
+
+\section{Đề xuất hướng phát triển}
+
+\begin{enumerate}
+  \item \textbf{Benchmark tổng hợp ba trục.} Xây dựng bộ đánh giá trong đó mỗi cấu hình \MAS{} được đo đồng thời độ chính xác, chi phí (token/năng lượng/độ trễ) và độ suy giảm khi có agent đối kháng (theo giao thức ghép cặp C0/C1 của TIDE). Đây là hướng khả thi nhất cho quy mô một bài tập lớn: có thể kết hợp các tác vụ của TIDE với các cấu trúc ngẫu nhiên của AGENT-RADAR/HalluProp.
+
+  \item \textbf{Giao tiếp có nhận thức nguồn gốc.} Mở rộng điểm số của AGENT-RADAR bằng một thành phần \emph{độ tin cậy nguồn}: phân biệt bằng chứng trực tiếp với thông tin được chuyển tiếp, giảm trọng số theo propagation order (đúng với phát hiện của TIDE rằng thông tin sai lan qua chuỗi dài hơn). Có thể kết hợp với intrinsic risk $\pi_i$ của HalluProp làm trọng số cho từng agent nguồn:
+  \begin{equation}
+    \text{score}'(s_k) = \text{score}(s_k)\cdot(1 - \hat h_j)\cdot \mu^{\,\text{hop}(s_k)},\qquad 0<\mu<1.
+  \end{equation}
+
+  \item \textbf{Điều phối nhận thức rủi ro.} Kết hợp ProgRouter với HalluProp: hệ số phạt trong hàm điểm routing không chỉ dựa trên chi phí mà còn trên rủi ro hallucination dự báo của vai trò, sao cho các bước có rủi ro cao được giao cho mô hình mạnh hơn hoặc thêm bước kiểm chứng.
+
+  \item \textbf{Phòng thủ chủ động trước thông tin sai.} Thay vì observer thụ động, thiết kế \emph{verifier agent} có nhiệm vụ yêu cầu bằng chứng trực tiếp và kiểm tra tính độc lập của nguồn trước khi đồng thuận; đánh giá trên môi trường TIDE.
+
+  \item \textbf{Chuẩn hóa thuật ngữ và báo cáo.} Đề xuất danh mục kiểm tra khi công bố \MAS: bản chất agent, backbone, số agent và vòng, topology, số lần chạy và phương sai, chi phí. Điều này giúp các nghiên cứu sau so sánh được với nhau.
+
+  \item \textbf{Mở rộng quy mô và tác vụ.} Đánh giá các phương pháp trên hệ lớn hơn (hàng chục agent), tác vụ dài hạn có công cụ, và với cả mô hình thương mại -- ví dụ thay SPA bằng các phương pháp nhấn mạnh ở mức prompt cho mô hình hộp đen.
+\end{enumerate}

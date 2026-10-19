@@ -1,0 +1,405 @@
+\chapter{TRÌNH BÀY CÁC NGHIÊN CỨU TIÊU BIỂU}
+\label{chap:papers}
+
+Chương này trình bày chi tiết tám nghiên cứu theo bốn nhóm của khung phân loại. Mỗi nghiên cứu gồm: bài toán và động lực, phương pháp, thiết lập thực nghiệm, kết quả chính và nhận xét phản biện của nhóm.
+
+% =====================================================================
+\section{Nhóm Safety \& Robustness}
+% =====================================================================
+
+\subsection{MIRAGE: Che giấu topology của MAS bằng phantom topology}
+\label{sec:mirage}
+
+\noindent\textit{He, Wen, Su et al. (NTU, BUPT, PolyU), arXiv 2609.37567, 09/2026, preprint~\cite{p1mirage}.}
+
+\paragraph{Bài toán và động lực.} Topology của \MAS{} -- đồ thị có hướng mô tả agent nào chuyển đầu ra cho agent nào -- quyết định hiệu năng lập luận và thường được tạo bởi các bộ tối ưu tốn kém như G-Designer, AGP, ARG-Designer. Tấn công CIA (Communication Inference Attack) đã chỉ ra rằng kẻ tấn công chỉ với quyền truy vấn hộp đen có thể khiến \MAS{} để lộ đầu ra trung gian của các agent, rồi suy ra cạnh dựa trên quan sát rằng hai agent được nối trực tiếp có đầu ra phụ thuộc ngữ nghĩa mạnh hơn. Việc lộ cấu trúc gây hai rủi ro: (a) lộ điểm yếu -- biết key agent để tấn công có chủ đích; (b) đánh cắp intellectual property. Các cơ chế phòng thủ \MAS{} hiện có (BlindGuard, GUARDIAN, PsySafe,~\ldots) bảo vệ \emph{nội dung} hoặc \emph{hành vi}, chưa có cơ chế nào bảo vệ \emph{tính bí mật của cấu trúc}. Mục tiêu hình thức là tìm hệ được bảo vệ $\tilde S$ sao cho
+\begin{equation}
+  \max_{\tilde S}\ \Delta_{topo}(\hat G, G) \quad \text{s.t.}\quad U(\tilde S) \ge U(S) - \epsilon,
+\end{equation}
+trong đó $\hat G$ là cấu trúc kẻ tấn công suy ra, $U$ là độ chính xác tác vụ và $\epsilon$ là mức suy giảm cho phép.
+
+\paragraph{Phương pháp.} Ý tưởng cốt lõi là \emph{chạy} tác vụ trên đồ thị thật $G$ nhưng \emph{cho kẻ tấn công thấy} bằng chứng chỉ về một phantom graph $G'$. MIRAGE gồm ba giai đoạn:
+\begin{enumerate}
+  \item \textbf{Tổng hợp phantom topology.} Giữ nguyên tập agent, chỉ đi dây lại các cạnh trong không gian cạnh tôn trọng thứ tự thực thi (để không tạo chu trình). Độ lệch cấu trúc được đo bằng Structural Camouflage Ratio $\rho(H,G) = 1 - \frac{|E_H\cap E|}{|E_H\cup E|}$ (một trừ hệ số Jaccard). Lấy cảm hứng từ $k$-anonymity, topology anonymity set $K_{\rho_0}(G) = \{H : \rho(H,G)\ge\rho_0\}$ chứa các đồ thị đủ khác biệt; một phần tử được chọn làm $G'$.
+  \item \textbf{Semantic Edge Realization.} Với mỗi \emph{phantom edge}, một \LLM{} sinh ``bằng chứng phụ thuộc'' giả, tuân thủ nhất quán vai trò, liên quan đến tác vụ và hợp lý về phụ thuộc. Với mỗi \emph{genuine edge cần giấu}, đầu ra được diễn đạt lại thành $M$ ứng viên và chọn ứng viên cân bằng giữa sai lệch ngữ nghĩa và độ phụ thuộc vào các agent tiền nhiệm bị giấu:
+  \begin{equation}
+    \tilde r_i = \arg\min_{\hat r \in R_i}\Big[D_{sem}(\hat r, r_i) + \lambda \sum_{a_j \in P_i^h} S_{dep}(r_j, \hat r)\Big].
+  \end{equation}
+  \item \textbf{Dual-view execution.} Execution view vẫn chạy trên $G$ nên tính toán không đổi; exposure view gồm vết lập luận đã che giấu cộng bằng chứng ảo, dùng để tạo phản hồi cho người dùng bên ngoài.
+\end{enumerate}
+
+\paragraph{Thực nghiệm.} Bốn tập dữ liệu (MMLU, GSM8K, SVAMP, HumanEval; 100 tác vụ mỗi tập), ba bộ tạo cấu trúc (G-Designer, AGP, ARG-Designer), tấn công CIA. Đối chứng: không phòng thủ, chỉ dẫn phòng ngừa (Instruction), dấu phân cách (Delimiters) và phát hiện bằng perplexity. Độ đo: AUC/ACC/F1 của cạnh suy ra (càng thấp càng tốt, AUC $\approx 0.5$ là lý tưởng).
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Kết quả MIRAGE với G-Designer (AUC / ACC / F1 của tấn công, thấp hơn là tốt hơn)~\cite{p1mirage}.}
+\label{tab:mirage}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Tập dữ liệu} & \textbf{Instruction} & \textbf{Delimiters} & \textbf{MIRAGE} \\
+\midrule
+MMLU      & 0.79 / 0.59 / 0.62 & 0.76 / 0.61 / 0.64 & \textbf{0.67 / 0.50 / 0.49} \\
+GSM8K     & 0.81 / 0.73 / 0.64 & 0.80 / 0.76 / 0.67 & \textbf{0.64 / 0.51 / 0.42} \\
+SVAMP     & 0.72 / 0.74 / 0.69 & 0.70 / 0.68 / 0.71 & \textbf{0.64 / 0.48 / 0.39} \\
+HumanEval & 0.78 / 0.62 / 0.59 & 0.76 / 0.65 / 0.56 & \textbf{0.68 / 0.44} / 0.52 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Phát hiện bằng perplexity chỉ đạt AUC 0.51--0.60 trong việc phân biệt truy vấn tấn công với truy vấn bình thường, tức gần như ngẫu nhiên. Theo tác giả, độ chính xác tác vụ ``được bảo toàn phần lớn''. Thí nghiệm loại bỏ cho thấy bỏ thành phần sinh phantom edge hoặc che giấu cạnh thật đều làm tấn công mạnh lên.
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} mở ra một chiều an toàn mới (bí mật cấu trúc); thiết kế tách thực thi/phơi bày gọn gàng; hình thức hóa theo $k$-anonymity với tham số điều chỉnh $\rho_0$. \textbf{Hạn chế:} chỉ đánh giá với một tấn công (CIA), không có kẻ tấn công thích nghi biết về MIRAGE (ví dụ phát hiện văn bản do LLM sinh); AUC sau phòng thủ vẫn khoảng 0.64--0.68, xa mức 0.5 nên việc che giấu mới chỉ một phần; quy mô nhỏ (100 tác vụ/tập); không báo cáo chi phí phát sinh do các lần gọi LLM thêm để diễn đạt lại và sinh bằng chứng; không thảo luận phương án đơn giản là không phơi bày vết lập luận trung gian.
+\end{nhanxet}
+
+% ---------------------------------------------------------------------
+\subsection{TIDE: Thông tin sai làm chệch hướng khôi phục sự thật tập thể}
+\label{sec:tide}
+
+\noindent\textit{Yan, Yue, Zhao et al. (CASIA và cộng sự), arXiv 2608.03421, 08/2026, preprint~\cite{p4tide}.}
+
+\paragraph{Bài toán và động lực.} \MAS{} thường được đánh giá qua độ chính xác câu trả lời cuối, nhưng điều đó không cho biết bằng chứng \emph{riêng} của từng agent có thực sự được đưa vào và tích hợp đúng trong thảo luận hay không. Lấy cảm hứng từ nghiên cứu ``hidden profile'' ở nhóm người~\cite{stasser1985}, bài báo đặt câu hỏi: khi sự thật bị phân tán giữa các agent và có một deceiver, bằng chứng đúng và sai cạnh tranh, lan truyền ra sao?
+
+\paragraph{Phương pháp: khung đánh giá ForesightSafety-TIDE.} Đây là \emph{khung đánh giá có kiểm soát}, không phải phương pháp \MAS{} mới.
+\begin{itemize}
+  \item \textbf{Môi trường:} 120 môi trường được xây từ truyện Hi-ToM. Mỗi môi trường có một đồ vật di chuyển qua chuỗi vị trí $l_0 \to l_1 \to \cdots \to l_m$, và 5 agent, mỗi agent chỉ quan sát một phần chuỗi. Thiết kế đảm bảo hình thức hai tính chất: \emph{tập thể đủ thông tin} -- gộp bằng chứng của 4 agent không then chốt thì xác định được duy nhất $l_m$; \emph{cá nhân thiếu thông tin} -- không agent nào tự xác định được.
+  \item \textbf{Điều kiện ghép cặp:} C0 -- tất cả trung thực; C1 -- key agent (người thấy bước di chuyển cuối) nói dối hướng tới decoy $d = l_{m-1}$ bằng ba cơ chế: \emph{Event} (bịa ra bước di chuyển ngược), \emph{Coverage} (kéo dài cửa sổ quan sát), \emph{Source} (gán sai thời điểm của một báo cáo cũ).
+  \item \textbf{Giao thức:} phán đoán riêng (T0), cập nhật sau testimony card bắt buộc có kiểu (T1), ba vòng thảo luận công khai (R1--R3), bỏ phiếu riêng sau mỗi vòng. Mô hình: GPT-5.5, DeepSeek-v4-pro, Grok-4.5, mỗi mô hình là một hệ đồng nhất 5 agent.
+  \item \textbf{Độ đo quá trình:} tỉ lệ trích dẫn và chấp nhận testimony, \emph{evidence lineage} (gốc đúng / gốc sai) và \emph{propagation order} (số bước chuyển tiếp).
+\end{itemize}
+
+\paragraph{Kết quả chính.}
+\begin{itemize}
+  \item Tỉ lệ đa số đúng giảm từ \textbf{72.50\%} (C0) xuống \textbf{14.17\%} (C1), giảm 58.33 điểm phần trăm; phiếu đúng cá nhân giảm từ 75.00\% xuống 24.38\%; $p < .001$ với cả ba mô hình.
+  \item Trong 309 lần thất bại ở C1, khoảng một nửa (156) là đa số theo decoy và một nửa (152) là không đồng thuận.
+  \item \textbf{Adoption asymmetry:} testimony sai được chấp nhận 70.7\% trong khi testimony đúng chỉ 25.4\%. Bằng chứng sai lan xa hơn: propagation order trung bình ở R3 là 2.66 so với 1.33 của bằng chứng đúng.
+  \item Khoảng 85\% khoảng cách cuối cùng đã hình thành ngay sau khi chia sẻ testimony (T1). Thảo luận \emph{khuếch đại} chiều hướng bằng chứng sẵn có chứ không sửa sai.
+  \item Khi deceiver rời nhóm sau khi khai, tỉ lệ đa số đúng vẫn thấp hơn 46.67 điểm so với khi agent đó rời đi im lặng: thông tin sai tồn tại độc lập với người phát tán.
+  \item Thêm ``observer'' không có bằng chứng trực tiếp giảm khoảng 90\% số đa số theo decoy, nhưng \emph{không} tăng đa số đúng: họ làm nhóm thận trọng hơn chứ không sửa được lỗi.
+\end{itemize}
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} thiết kế ghép cặp cô lập chính xác tác động của lừa dối; tính đủ/thiếu thông tin được kiểm chứng hình thức; truy vết evidence lineage vượt xa các độ đo chỉ nhìn kết quả; kiểm định thống kê chặt (bootstrap, McNemar). \textbf{Hạn chế:} chỉ một tác vụ hẹp (theo dõi vị trí đồ vật); mỗi ô chạy một lần; chỉ hệ đồng nhất 5 agent, kết nối đầy đủ; thí nghiệm bổ sung chỉ dùng GPT-5.5; decoy luôn là $l_{m-1}$ -- vị trí mà một số agent trung thực cũng thấy là ``lần cuối'', có thể thổi phồng sức mạnh của testimony sai; agent được báo trước ``tối đa một người không đáng tin'', một giả định mạnh; chưa đề xuất phương pháp phòng thủ.
+\end{nhanxet}
+
+
+% ---------------------------------------------------------------------
+\subsection{So sánh trong nhóm: MIRAGE và TIDE}
+\label{sec:cmp-safety}
+
+Hai nghiên cứu cùng thuộc hướng an toàn nhưng nhìn rủi ro từ hai phía đối lập: MIRAGE xem mối đe doạ là một \emph{kẻ tấn công bên ngoài} muốn suy ra cấu trúc hệ thống, còn TIDE xem mối đe doạ là \emph{một agent bên trong} cố tình đưa thông tin sai. Bảng~\ref{tab:cmp-g1} so sánh chi tiết.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{So sánh MIRAGE và TIDE.}
+\label{tab:cmp-g1}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y Y}
+\toprule
+\textbf{Tiêu chí} & \textbf{MIRAGE} & \textbf{TIDE} \\
+\midrule
+Loại đóng góp & Phương pháp phòng thủ & Khung đánh giá (benchmark) \\
+Nguồn đe doạ & Kẻ tấn công bên ngoài, truy vấn hộp đen & Agent bên trong nói dối \\
+Tài sản cần bảo vệ & Tính bí mật của topology & Tính đúng đắn của kết luận tập thể \\
+Topology được xét & DAG tối ưu (G-Designer, AGP, ARG-Designer) & Kết nối đầy đủ, phát quảng bá + kênh riêng \\
+Backbone & Không nêu trong thân bài & GPT-5.5, DeepSeek-v4-pro, Grok-4.5 \\
+Độ đo chính & AUC/ACC/F1 của cạnh bị suy ra & Đa số đúng/decoy, evidence lineage, propagation order \\
+Kết quả nổi bật & AUC tấn công giảm còn 0.64--0.68 & Đa số đúng giảm 72.50\% $\to$ 14.17\% \\
+Kiểm định thống kê & Không & Có (bootstrap, McNemar) \\
+Hạn chế chính & Một loại tấn công (CIA); chưa có kẻ tấn công thích nghi & Một tác vụ (Hi-ToM); chưa đề xuất phòng thủ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Hai bài bổ sung cho nhau theo một logic rõ ràng. TIDE cho thấy một khi thông tin sai đã vào hệ thống thì gần như không thể sửa bằng thảo luận; MIRAGE cho thấy có thể làm kẻ tấn công khó xác định agent then chốt -- tức khó chọn đúng chỗ để đưa thông tin sai vào. Tuy vậy, chưa bài nào đề xuất cơ chế \emph{khôi phục} sự thật khi tấn công đã xảy ra; đây là khoảng trống được bàn ở Chương~\ref{chap:gaps}.
+
+% =====================================================================
+\section{Nhóm Orchestration \& Control}
+% =====================================================================
+
+\subsection{ProgRouter: Online progress-guided orchestration}
+\label{sec:progrouter}
+
+\noindent\textit{Li, Abdelmoniem, Wang (Aston, QMUL, Exeter), arXiv 2608.25992, 08/2026, preprint~\cite{p3progrouter}.}
+
+\paragraph{Bài toán và động lực.} Quy trình multi-agent (kiểu Magentic-One~\cite{magenticone}) gọi \LLM{} nhiều lần với ngữ cảnh dài, rất tốn kém. Các router hiện có (RouteLLM, CASCADIA, MasRouter) ra quyết định \emph{một lần cho mỗi câu hỏi}, trong khi quy trình multi-agent cần \emph{chuỗi} quyết định phụ thuộc trạng thái: ở mỗi bước, vai trò được gọi nên dùng mô hình nào? Ba khó khăn: quy trình mở và có trạng thái; tiến độ phải ước lượng từ trạng thái trung gian nhiễu; ngân sách phải được tuân thủ khi chưa biết các bước tương lai.
+
+\paragraph{Phương pháp.} Một coordinator agent $C$ lập kế hoạch và chọn \emph{vai trò} tiếp theo; ProgRouter chọn \emph{mô hình} cho vai trò đó từ model zoo. Bài toán là cực đại hóa chất lượng trung bình dưới ràng buộc chi phí (năng lượng GPU, Jun) và thời gian theo từng tác vụ cũng như trung bình dài hạn. Ba thành phần:
+\begin{enumerate}
+  \item \textbf{Multi-view progress scorer} $g(s_t)\in[0,1]$, kết hợp phân loại trạng thái tổng thể $c_t$ (không hợp lệ / có thể cứu / thành công một phần / hoàn tất), tỉ lệ yêu cầu con đã hoàn thành $r_t$, xu hướng tiến độ $d_t$ và chất lượng trạng thái $e_t$:
+  \begin{equation}
+    g(s_t) = b(c_t) + \alpha_{c_t} r_t + \beta_{c_t} d_t + \gamma_{c_t} e_t.
+  \end{equation}
+  \item \textbf{Dual-path progress predictor}: nhánh cấu trúc (cây hồi quy trên đặc trưng bảng) và nhánh ngữ nghĩa (cây hồi quy trên embedding MiniLM của bản tóm tắt trạng thái), kết hợp bằng một meta-learner XGBoost, dự báo mức tăng tiến độ $\hat y_t$ nếu dùng mô hình $m_t$.
+  \item \textbf{Online decision-making theo Lyapunov drift-plus-penalty} với virtual cost queue $Q_w$:
+  \begin{equation}
+    \text{score}(m_t) = V(1-g(s_t))\,\hat y_t(m_t) - Q_w\big(E(m_t)-\tilde E\big) - c^{\Gamma}_t\,\Gamma(m_t) - c^{E}_t\,E(m_t).
+  \end{equation}
+  Mức tăng tiến độ có giá trị hơn khi tác vụ còn xa đích; các hệ số phạt tăng theo hàm mũ khi ngân sách sắp cạn. Bộ dự báo được học trực tuyến với khám phá $\varepsilon$-greedy, không cần dữ liệu huấn luyện ngoại tuyến.
+\end{enumerate}
+
+\paragraph{Thực nghiệm.} Khung AG2/AutoGen; coordinator Qwen3-Coder-Next 80B; model zoo gồm các mô hình Qwen, Granite, Gemma từ 0.5B đến 35B. Bốn bộ dữ liệu: HumanEval+, MBPP, MATH-500, ASQA. Đối chứng: MasRouter, CASCADIA, Educated Guessing, các chính sách một mô hình cố định. Năng lượng đo thực bằng NVML.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Kết quả ProgRouter (độ chính xác \% / năng lượng J). $^{\dagger}$ = vượt ngân sách năng lượng~\cite{p3progrouter}.}
+\label{tab:progrouter}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Phương pháp} & \textbf{HumanEval+} & \textbf{MBPP} & \textbf{MATH-500} & \textbf{ASQA} \\
+\midrule
+Ngân sách $\tilde E$ & 4\,800 & 4\,500 & 7\,000 & 19\,000 \\
+\midrule
+MasRouter         & 90.9 / 4\,483 & 67.8 / 3\,700 & 73.6 / 8\,294$^{\dagger}$ & 89.8 / 16\,368 \\
+CASCADIA          & 84.8 / 4\,658 & 78.5 / 3\,857 & \textbf{87.8} / 6\,875 & 89.8 / 27\,857$^{\dagger}$ \\
+Educated Guessing & 91.5 / 4\,916$^{\dagger}$ & 65.2 / 3\,831 & 79.3 / 7\,023$^{\dagger}$ & 90.8 / 23\,423$^{\dagger}$ \\
+\textbf{ProgRouter} & \textbf{93.0} / 4\,796 & \textbf{79.4 / 3\,376} & 84.3 / \textbf{6\,112} & \textbf{92.1} / 18\,373 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Thí nghiệm loại bỏ trên HumanEval+: bỏ bộ dự báo còn 89.0\%, bỏ hệ số phạt ngân sách còn 87.8\%, và một chiến lược tham lam ``tiến độ trên chi phí'' ngây thơ chỉ đạt 17.7\% với 7\,797 J. Điều này cho thấy chính cơ chế ngân sách mới làm nên hiệu quả. Meta-learner có sai số MAE thấp nhất (0.0720) so với từng nhánh riêng lẻ.
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} routing theo từng bước, có nhận thức trạng thái; không cần dữ liệu ngoại tuyến; cơ chế ngân sách có nền tảng lý thuyết; đo năng lượng GPU thực thay cho token. \textbf{Hạn chế:} trên MATH-500 thua CASCADIA 3.5 điểm độ chính xác; tuyên bố ``cao nhất'' trên ASQA chỉ đúng trong số các phương pháp không vượt ngân sách (Qwen3.6-35B đơn lẻ đạt 92.3); kết quả chỉ báo cáo sau giai đoạn khởi động, bỏ qua chi phí khởi động; thí nghiệm loại bỏ chỉ trên một tập; không báo cáo phương sai; progress scorer cần định nghĩa thủ công các mốc cho từng miền.
+\end{nhanxet}
+
+% ---------------------------------------------------------------------
+\subsection{HalluProp: Suy luận rủi ro thất bại trước khi agent lên tiếng}
+\label{sec:halluprop}
+
+\noindent\textit{Lin, Wang, Qian et al. (ĐH Công Thương Chiết Giang, ĐH Chiết Giang), arXiv 2607.26836, 07/2026, preprint~\cite{p5halluprop}.}
+
+\paragraph{Bài toán và động lực.} Hallucination của một agent có thể lan theo các communication edge, được agent khác tiếp nhận và khuếch đại thành cascading failure. Các phương pháp phát hiện hiện tại đều \emph{post-hoc}: kiểm tra từng câu trả lời (SelfCheckGPT) hoặc quy trách nhiệm dựa trên đồ thị tương tác (GUARDIAN) -- đều cần chạy hết hệ thống và chậm. Câu hỏi đặt ra: có thể suy ra rủi ro của từng agent \emph{trước khi} có bất kỳ tương tác nào, chỉ từ role prompt, câu hỏi và topology không?
+
+\paragraph{Phương pháp.} Rủi ro được tách thành \emph{intrinsic risk} của từng đỉnh $\pi_i$ và \emph{propagation risk} của từng cạnh $t_{j\to i}$:
+\begin{itemize}
+  \item \textbf{Intrinsic risk:} mã hóa vai trò $e^R_i$ và câu hỏi $e^Q$ bằng bộ mã hóa văn bản đóng băng (BERT). Một cổng phụ thuộc câu hỏi tách vai trò thành phần \emph{năng lực} khớp với câu hỏi $\kappa_i$ và phần \emph{dễ tổn thương} còn lại $\rho_i$; $\pi_i = \sigma(w_\rho^\top\rho_i - w_\kappa^\top\kappa_i + b)$.
+  \item \textbf{Propagation risk:} tích của năng lực ảnh hưởng của bên gửi và độ dễ tổn thương của bên nhận, nhân với hệ số cấu trúc dựa trên bậc vào/ra (luôn $\ge 1$, tức cấu trúc chỉ khuếch đại rủi ro).
+  \item \textbf{Suy luận cấp hệ thống bằng Noisy-OR khả vi}, lặp điểm bất động $K$ bước (tốt nhất $K=3$), xử lý được cả đồ thị có chu trình:
+  \begin{equation}
+    h_i^{(k+1)} = 1 - (1-\pi_i)\prod_{j\in\mathcal N_{in}(i)}\big(1 - t_{j\to i}\, h_j^{(k)}\big),\qquad h^{(0)} = \pi.
+  \end{equation}
+  \item \textbf{Can thiệp:} với agent rủi ro cao nhất, hoặc \emph{cắt} các cạnh ra của nó, hoặc \emph{tinh chỉnh} prompt thành vai trò ``kiểm chứng thận trọng''.
+\end{itemize}
+
+\paragraph{Thực nghiệm.} MMLU, MATH, MedQA (500 câu mỗi tập); bốn backbone GPT-3.5, GPT-4o, Llama-3-8B, Qwen-2-7B; đồ thị ngẫu nhiên với 3--7 agent, 3 vòng; vai trò được nhiễu có chủ đích (lệch miền, mơ hồ, thiên lệch). Nhãn ``hallucination'' là việc đầu ra của agent sai so với đáp án.
+
+\paragraph{Kết quả chính.} AUROC trung bình 84.6 (cao nhất 91.5 với GPT-4o trên MMLU; MedQA thấp hơn khoảng 10 điểm). Thời gian chẩn đoán dưới 1 giây so với 53--308 giây của các phương pháp post-hoc (nhanh hơn trên 65 lần). Sau can thiệp, độ chính xác trung bình là 67.6\% (tinh chỉnh) và 63.6\% (cắt cạnh) so với 63.5\% của GUARDIAN. Loại bỏ mô hình hóa intrinsic risk, đặc trưng cấu trúc hay lan truyền làm AUROC giảm lần lượt khoảng 28\%, 15\% và 21\%. Kết quả ổn định trên các cấu trúc hình sao, chuỗi và phân cấp (chênh lệch trong khoảng 2\%).
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} hướng tiếp cận \emph{pre-hoc} mới; phân rã đỉnh/cạnh dễ giải thích; chẩn đoán dưới một giây, không cần gọi LLM; có lập luận hội tụ. \textbf{Hạn chế:} ``hallucination'' thực chất là \emph{trả lời sai} trên câu hỏi trắc nghiệm/toán; tín hiệu có thể đến chủ yếu từ các vai trò bị nhiễu có chủ đích -- tính thực tế chưa được chứng minh; là phương pháp có giám sát, cần nhãn từ các lần chạy thật, chưa kiểm tra chuyển giao sang tác vụ/mô hình mới; đồ thị nhỏ ($\le 7$ agent); so sánh tốc độ bỏ qua chi phí huấn luyện; số liệu mô hình đầy đủ chênh nhẹ giữa hai bảng (84.6 và 84.8).
+\end{nhanxet}
+
+
+% ---------------------------------------------------------------------
+\subsection{So sánh trong nhóm: ProgRouter và HalluProp}
+\label{sec:cmp-orch}
+
+Cả hai đều ra quyết định \emph{điều khiển} hệ thống nhưng ở hai thời điểm và với hai mục tiêu khác nhau (Bảng~\ref{tab:cmp-g2}).
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{So sánh ProgRouter và HalluProp.}
+\label{tab:cmp-g2}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y Y}
+\toprule
+\textbf{Tiêu chí} & \textbf{ProgRouter} & \textbf{HalluProp} \\
+\midrule
+Thời điểm can thiệp & Trong khi chạy, từng bước & Trước khi chạy (pre-hoc) \\
+Câu hỏi quyết định & Vai trò này, bước này dùng model nào? & Agent/cạnh nào có rủi ro cao? \\
+Mục tiêu tối ưu & Chất lượng trong ngân sách năng lượng/thời gian & Độ tin cậy (giảm lỗi lan truyền) \\
+Tín hiệu đầu vào & Trạng thái workflow (ledger), lịch sử dispatch & Role prompt, câu hỏi, topology \\
+Cách học & Học trực tuyến, không cần dữ liệu ngoại tuyến & Có giám sát, cần nhãn từ các lần chạy \\
+Mô hình bên trong & Cây hồi quy + XGBoost & BERT đóng băng + Noisy-OR khả vi \\
+Chi phí của chính phương pháp & Rất nhẹ (cây hồi quy) & $<$1 giây/chẩn đoán (chưa tính huấn luyện) \\
+Tương thích model API & Có & Có \\
+Kết quả nổi bật & 93.0\% HumanEval+ trong ngân sách & AUROC 84.6; accuracy 67.6\% sau refinement \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Điểm chung đáng chú ý là cả hai đều chuyển từ quyết định \emph{tĩnh} sang quyết định \emph{phụ thuộc ngữ cảnh}: ProgRouter phụ thuộc tiến độ hiện tại, HalluProp phụ thuộc câu hỏi cụ thể. Hai phương pháp cũng kết hợp tự nhiên: rủi ro do HalluProp dự báo có thể trở thành một khoản phạt trong hàm điểm của ProgRouter, để các bước rủi ro cao được giao cho model mạnh hơn (đề xuất ở Chương~\ref{chap:gaps}).
+
+% =====================================================================
+\section{Nhóm Communication \& Interaction}
+% =====================================================================
+
+\subsection{DAIN: Dynamic Agent-based Interaction Network cho suy luận đa phương thức}
+\label{sec:dain}
+
+\noindent\textit{Chen, Li, Wang et al. (Viện Hàn lâm Khoa học Trung Quốc), arXiv 2606.30189, 06/2026, preprint~\cite{p7dain}.}
+
+\paragraph{Bài toán và động lực.} Kết hợp dữ liệu đa phương thức (ảnh, văn bản, âm thanh, hồ sơ lâm sàng) là bài toán cốt lõi, nhất là trong chẩn đoán y tế. Partial Information Decomposition (PID) chia thông tin đa phương thức thành \emph{uniqueness}, \emph{redundancy} và \emph{synergy}, nhưng hiếm khi được tích hợp vào mô hình đầu-cuối. Các phương pháp Mixture-of-Experts (MoE) đa phương thức dùng cấu trúc cộng tác \emph{tĩnh}, không chọn expert theo ngữ cảnh và không cho các expert trao đổi thông tin.
+
+\paragraph{Phương pháp.} DAIN coi việc kết hợp đa phương thức là quá trình ra quyết định cộng tác của $K=8$ ``interaction agent'' -- mỗi agent là một \emph{mô-đun nơ-ron}, không phải LLM -- gồm 3 synergy agent, 3 uniqueness agent và 2 redundancy agent.
+\begin{enumerate}
+  \item \textbf{Encoding \& context analysis:} mỗi phương thức qua bộ mã hóa riêng (ResNet-50, BERT-base), ghép thành vector ngữ cảnh $e_c$.
+  \item \textbf{Dynamic scheduling bởi Meta-Controller:} cổng thưa chọn agent nào được kích hoạt, đồng thời sinh soft communication graph phụ thuộc đầu vào:
+  \begin{equation}
+    g = \mathrm{Top}_\tau\big(\mathrm{Softmax}(G_{gate}(e_c))\big),\qquad \Phi = \sigma\big(G_{comm}(e_c)\big)\in\mathbb{R}^{K\times K}.
+  \end{equation}
+  \item \textbf{Gated execution \& compressed communication:} thông điệp $m_{i\leftarrow j} = \Phi_{ij}\cdot W_B h_j$ qua low-rank bottleneck; một vòng cập nhật trạng thái.
+  \item \textbf{Consensus fusion:} chú ý đa đầu trên trạng thái các agent được kích hoạt.
+\end{enumerate}
+Hàm mục tiêu kết hợp mất mát tác vụ, specialization loss dựa trên nhiễu loạn và hai chính quy hóa khuyến khích sparse activation và giao tiếp thưa:
+\begin{equation}
+  \mathcal L = \mathcal L_{task} + \alpha\,\mathcal L_{spec} + \lambda_{act}\|g\|_1 + \lambda_{comm}\|\Phi\|_F^2.
+\end{equation}
+
+\paragraph{Thực nghiệm và kết quả.} Năm tập dữ liệu: ADNI (Alzheimer), MIMIC-IV (tử vong ICU), MM-IMDB (thể loại phim), CMU-MOSI (cảm xúc, MSE), ENRICO (giao diện di động). DAIN vượt các đối chứng (Early/Late Fusion, MoE, Sparse MoE, MMoE) trên cả năm tập, ví dụ ADNI 73.5 so với 70.9, MOSI MSE 2.41 so với 2.48. Trung bình chỉ 3.2--5.5 trên 8 agent được kích hoạt, mật độ đồ thị 0.19--0.42. Ngân sách agent tối ưu là $\tau = 4$. Bỏ giao tiếp làm giảm 1.4 điểm trên ADNI; bỏ dynamic scheduling (kích hoạt tất cả) giảm 1.7 điểm. Phân tích kích hoạt cho thấy bệnh nhân bình thường dùng chủ yếu uniqueness agent, còn ca suy giảm nhận thức dùng nhiều synergy agent hơn.
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} thiết kế ba bước (lập lịch -- giao tiếp -- đồng thuận) rõ ràng, gắn với lý thuyết PID; sparse activation có số liệu theo từng tập; có khả năng diễn giải qua hồ sơ kích hoạt. \textbf{Hạn chế:} ``agent'' chỉ là ẩn dụ -- hệ thống thực chất là MoE có cổng và truyền thông điệp giữa expert; số liệu mức cải thiện không nhất quán giữa Bảng 1, Bảng 3 và văn bản; phép cộng số tham số ``hiệu dụng'' không khớp với con số 5.8M được nêu; tuyên bố báo cáo độ lệch chuẩn nhưng bảng không có; đối chứng yếu và cũ; nhiều trích dẫn lạc đề.
+\end{nhanxet}
+
+% ---------------------------------------------------------------------
+\subsection{AGENT-RADAR: Attention steering theo context relevance}
+\label{sec:radar}
+
+\noindent\textit{Zhang, Tian, Zhang (Purdue University), arXiv 2605.30136, 05/2026, preprint~\cite{p8radar}.}
+
+\paragraph{Bài toán và động lực.} Lịch sử hội thoại trong \MAS{} tăng nhanh và chứa nhiều nội dung lặp lại, khiến mô tả nhiệm vụ gốc và bằng chứng then chốt bị chôn vùi giữa ngữ cảnh (``lost in the middle''~\cite{lostmiddle}). Các giải pháp tóm tắt (compaction) hoặc cắt tỉa (AgentPrune, AgentDropout) đều làm mất thông tin, có thể loại bỏ đúng những tín hiệu tinh tế nhưng quan trọng. Đề xuất: \emph{giữ nguyên toàn bộ} lịch sử và dùng \emph{soft attention steering} hướng về nội dung liên quan.
+
+\paragraph{Phương pháp.} AGENT-RADAR là mô-đun cắm thêm, không cần huấn luyện. Với agent $v_i$ ở vòng $t$ và câu hỏi hiện tại $q^{(t)}$, mỗi câu $s_k$ trong thông điệp $o_j^{(\tau)}$ của agent $v_j$ ở vòng $\tau$ được chấm điểm bằng tích ba thành phần:
+\begin{equation}
+  \text{score}(s_k) = \underbrace{\lambda_s^{\,d_G(v_j,v_i)-1}}_{\text{spatial decay}} \cdot \underbrace{\lambda_t^{\,t-\tau-1}}_{\text{temporal decay}} \cdot \underbrace{\cos\big(\mathrm{Enc}(s_k), \mathrm{Enc}(q^{(t)})\big)}_{\text{semantic relevance}},
+\end{equation}
+trong đó $d_G$ là khoảng cách đường đi ngắn nhất trên đồ thị (lấy cảm hứng từ lý thuyết mạng tổ chức: ảnh hưởng suy giảm theo khoảng cách) và temporal decay phản ánh hiệu ứng gần đây. Các câu có điểm $\ge \theta$ (cùng với câu hỏi hiện tại) được \emph{nhấn mạnh} bằng kỹ thuật attention steering SPA; toàn bộ lịch sử vẫn nằm trong prompt. Siêu tham số: $\lambda_s = \lambda_t = 0.92$, $\theta = 0.65$.
+
+\paragraph{Thực nghiệm.} Năm bộ dữ liệu: HotpotQA, 2WikiMultihopQA, MuSiQue (F1), MATH-500, MMLU-Pro (độ chính xác). Mô hình chính Qwen3-4B; kiểm tra thêm Llama-3.1-8B, Qwen3-32B. Cấu hình 5 agent, 2 vòng (3 vòng với debate), các cấu trúc ngẫu nhiên, phân lớp, đầy đủ và debate.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Kết quả AGENT-RADAR với Qwen3-4B, cấu trúc ngẫu nhiên~\cite{p8radar}.}
+\label{tab:radar}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Phương pháp} & \textbf{HotpotQA} & \textbf{2Wiki} & \textbf{MuSiQue} & \textbf{MATH-500} & \textbf{MMLU-Pro} \\
+\midrule
+Vanilla (1 agent) & 75.07 & 71.14 & 35.47 & 80.60 & 60.20 \\
+CoT-SC ($n=8$)     & 76.51 & 72.03 & 36.33 & 79.80 & 62.60 \\
+Compaction         & 74.33 & 73.34 & 34.43 & 83.60 & 56.40 \\
+AgentPrune         & 75.31 & 73.03 & 37.05 & 80.80 & 63.60 \\
+AgentDropout       & 73.14 & 78.45 & 37.06 & 82.60 & 67.40 \\
+\textbf{AGENT-RADAR} & \textbf{80.78} & \textbf{80.81} & \textbf{39.72} & \textbf{88.80} & \textbf{69.40} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Khi cắm vào các khung có sẵn, AGENT-RADAR cải thiện GPTSwarm (MuSiQue tăng 12.87 F1), AutoGen (MATH-500 từ 81.0 lên 90.0) và Multi-Agent Debate. Thời gian chạy 1\,196.5 giây/tác vụ so với 968.8 giây của \MAS{} gốc (tăng khoảng 23\%), thấp hơn Compaction (1\,757.1) và AgentDropout (1\,382.4). Thí nghiệm loại bỏ cho thấy chỉ nối các câu được chọn vào prompt (không attention steering) giảm mạnh hiệu năng (MATH-500 từ 88.8 xuống 81.4).
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} không cần huấn luyện, không mất thông tin; kết hợp cấu trúc đồ thị, thời gian và ngữ nghĩa một cách có nguyên lý; cải thiện nhất quán trên 3 khung, 4 cấu trúc và 3 backbone. \textbf{Hạn chế:} cần truy cập logit/chú ý nên không áp dụng được cho mô hình đóng qua API; siêu tham số được điều chỉnh trên MuSiQue -- đồng thời là tập kiểm thử; không có thanh sai số hay kiểm định thống kê dù nhiệt độ sinh bằng 1; không giảm số token; giả định khoảng cách đồ thị phản ánh mức liên quan có thể sai trong hệ có coordinator.
+\end{nhanxet}
+
+
+% ---------------------------------------------------------------------
+\subsection{So sánh trong nhóm: DAIN và AGENT-RADAR}
+\label{sec:cmp-comm}
+
+Hai bài cùng trả lời câu hỏi ``agent nên nhận thông tin gì từ agent khác'', nhưng ở hai mức trừu tượng rất khác nhau (Bảng~\ref{tab:cmp-g3}).
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{So sánh DAIN và AGENT-RADAR.}
+\label{tab:cmp-g3}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y Y}
+\toprule
+\textbf{Tiêu chí} & \textbf{DAIN} & \textbf{AGENT-RADAR} \\
+\midrule
+Bản chất agent & Mô-đun nơ-ron (không phải LLM) & LLM agent theo vai trò \\
+Kênh giao tiếp & Vector qua low-rank bottleneck & Văn bản (toàn bộ lịch sử hội thoại) \\
+Cơ chế chọn lọc & Học được: sparse gate + soft graph $\Phi$ & Tính toán: spatial $\times$ temporal decay $\times$ cosine \\
+Cần huấn luyện & Có (đầu-cuối) & Không (plug-in) \\
+Đối tượng được chọn & Agent nào hoạt động, ai nói với ai, mạnh bao nhiêu & Câu nào trong lịch sử được nhấn mạnh \\
+Hiệu quả tính toán & Giảm (chỉ 3.2--5.5/8 agent chạy) & Tăng nhẹ (+23\% latency), không giảm token \\
+Bài toán & Phân loại/hồi quy đa phương thức & QA nhiều bước, toán, MMLU-Pro \\
+Kết quả nổi bật & +1.3 đến +2.6 điểm so với MoE & +2.0 đến +7.6 điểm so với AgentDropout \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Dù khác nhau về mức trừu tượng, hai bài cùng đi theo một nguyên lý: \emph{lọc mềm} thay vì \emph{cắt cứng}. DAIN gán cường độ liên tục $\Phi_{ij}$ cho từng cặp agent thay vì bật/tắt cố định; AGENT-RADAR nhấn mạnh câu liên quan thay vì xoá câu không liên quan như AgentPrune/AgentDropout. Cả hai cho thấy giữ lại thông tin nhưng điều chỉnh trọng số tốt hơn là loại bỏ hẳn. Khác biệt quan trọng là DAIN đánh đổi tính tổng quát (phải huấn luyện cho từng bài toán) để lấy hiệu quả, còn AGENT-RADAR đánh đổi chi phí và yêu cầu hộp trắng để lấy tính cắm-là-chạy.
+
+% =====================================================================
+\section{Nhóm Domain Applications}
+% =====================================================================
+
+\subsection{MAC-RRG: Multi-agent collaboration radiology report generation}
+\label{sec:macrrg}
+
+\noindent\textit{Wang, Qiao, Wang et al. (ĐH An Huy và cộng sự), arXiv 2609.26124, 09/2026, định dạng IEEE Transactions~\cite{p2macrrg}.}
+
+\paragraph{Bài toán và động lực.} Sinh báo cáo X-quang ngực tự động giúp giảm tải cho bác sĩ chẩn đoán hình ảnh. Các phương pháp chỉ dùng LLM (như R2GenGPT) thiếu tri thức y khoa có cấu trúc nên dễ hallucination; các phương pháp tăng cường bằng knowledge graph (KG) thì kết hợp tri thức \emph{tĩnh, một lần}, không truy vấn lại dựa trên nội dung đã sinh và không dùng tri thức phi cấu trúc. Cả hai đều sinh một lượt, không có vòng phản hồi để kiểm tra thiếu sót.
+
+\paragraph{Phương pháp.} Hai giai đoạn:
+\begin{enumerate}
+  \item \textbf{Draft generation:} Swin Transformer mã hóa ảnh, Llama2-7B sinh bản nháp $R_0$.
+  \item \textbf{Knowledge-guided refinement:} trích thực thể giải phẫu và bệnh lý từ bản nháp bằng từ điển; \emph{MM-KG agent} truy xuất 10 láng giềng hàng đầu của mỗi thực thể trong knowledge graph y khoa (mã hóa bằng Bio\_ClinicalBERT, tổng hợp bằng chú ý đồ thị có nhận thức quan hệ); \emph{Knowledge agent} retrieval đoạn văn từ kho 393 đoạn xây từ PubMedVision (BGE-M3 + reranker). Hai luồng tri thức được chiếu và \emph{ghép nối} với token thị giác làm tiền tố cho LLM sinh báo cáo cuối: $Z = [V; \tilde R; \tilde G]$.
+\end{enumerate}
+
+\paragraph{Thực nghiệm và kết quả.} Ba bộ dữ liệu: IU X-Ray, MIMIC-CXR, CheXpert Plus; độ đo BLEU, ROUGE-L, METEOR, CIDEr và clinical efficacy (CE). BLEU-4 đạt 0.197 (IU X-Ray), 0.128 (MIMIC-CXR), 0.105 (CheXpert Plus) -- cao nhất trong các đối chứng được liệt kê. Trên CheXpert Plus, F1 lâm sàng đạt 0.295 so với 0.260 của R2GenGPT. Thí nghiệm loại bỏ cho thấy chỉ cần thêm \emph{một} nguồn tri thức bất kỳ đã nâng F1 từ 0.260 lên khoảng 0.286--0.288; phần cải thiện BLEU-4 nhỏ (0.101 lên 0.105). Trên MIMIC-CXR, phương pháp không dẫn đầu ở ROUGE-L, METEOR và CIDEr.
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} kết hợp tri thức có cấu trúc và phi cấu trúc, neo vào thực thể từ bản nháp có điều kiện hình ảnh; đưa tri thức vào dưới dạng token liên tục thay vì prompt dài; cải thiện clinical efficacy nhất quán; nhiều thí nghiệm siêu tham số. \textbf{Hạn chế:} ``multi-agent'' chủ yếu là cách đặt tên -- các ``agent'' là mô-đun retrieval tất định, không giao tiếp hay thương lượng; ``lặp'' thực tế chỉ một lượt tinh chỉnh; cải thiện NLG nhỏ và không có kiểm định thống kê; checkpoint được chọn dựa trên độ đo đánh giá; CE chỉ báo cáo trên một tập; không có đánh giá của bác sĩ; không báo cáo chi phí.
+\end{nhanxet}
+
+% ---------------------------------------------------------------------
+\subsection{UrbanAgent: Collaborative reasoning với bằng chứng từ công cụ cho urban region profiling}
+\label{sec:urban}
+
+\noindent\textit{Hao, Jiang, Liu et al. (HKUST Quảng Châu và cộng sự), arXiv 2607.13558, KDD 2026~\cite{p6urban}.}
+
+\paragraph{Bài toán và động lực.} Dự đoán chỉ số kinh tế -- xã hội (phát thải carbon, dân số, GDP) của vùng đô thị từ dữ liệu đa phương thức: ảnh vệ tinh, điểm quan tâm (POI), mô tả văn bản, mô hình tòa nhà 3D. Các phương pháp học sâu truyền thống trộn các phương thức vào một biểu diễn ẩn: (1) mâu thuẫn giữa các phương thức (vốn phản ánh sử dụng đất hỗn hợp, không phải nhiễu) bị hấp thụ thay vì được làm rõ; (2) suy luận dựa trên tương quan bề mặt, kém tin cậy ở vùng chưa thấy.
+
+\paragraph{Phương pháp.} Hai giai đoạn:
+\begin{enumerate}
+  \item \textbf{Tool-augmented agentic learning:} mỗi phương thức một agent (Qwen3-VL-4B) được dạy gọi 4 công cụ: tìm kiếm web, cắt-phóng to ảnh, tra cứu ánh sáng ban đêm, ảnh vệ tinh lịch sử. Huấn luyện SFT khởi động rồi GRPO với phần thưởng tổng hợp
+  \begin{equation}
+    R_{total} = \alpha R_{outcome} + \beta R_{format} + \gamma R_{process},
+  \end{equation}
+  trong đó $R_{process}$ phạt việc không dùng công cụ, gọi thừa hoặc gọi sai. Mỗi agent trả về dự đoán và độ tin cậy $c_k$.
+  \item \textbf{Suy luận multi-agent collaboration:} xây đồ thị quan hệ dị thể với ba loại cạnh: \emph{corroboration} (dự đoán gần nhau), \emph{rectification} (dự đoán chênh lệch lớn), \emph{supervisory} (agent tin cậy hơn hướng dẫn agent kém tin cậy). Truyền thông điệp có nhận thức quan hệ qua $L=5$ vòng (GRU), sau đó một Hierarchical Spatio-Temporal Final Judge tổng hợp ra dự đoán cuối.
+\end{enumerate}
+
+\paragraph{Thực nghiệm và kết quả.} 2\,000 vị trí 1\,km$^2$ trên toàn cầu; nhãn được chuẩn hóa theo hạng; độ đo $R^2$ và Spearman $\rho$. Đối chứng gồm MLLM mã nguồn mở và đóng (GPT-4o, Gemini-2.5-Flash), mô hình tiền huấn luyện đô thị (UrbanCLIP, UrbanVLP) và nhiều chiến lược multi-agent aggregation (AgentFusion, AgentBlender, Agent-Arbiter, Hierarchical Prompting). UrbanAgent đạt $R^2$ khoảng 0.63--0.65 và Spearman khoảng 0.80 trên ba chỉ số trong miền, và $R^2$ khoảng 0.60--0.62 trên các thành phố chưa thấy (Nhật Bản, Na Uy, Madagascar, Mexico). Tác giả báo cáo mức tăng $R^2$ trung bình 8.1\% so với đối chứng mạnh nhất. Bỏ giai đoạn multi-agent gây suy giảm lớn nhất; bỏ công cụ giảm khoảng 13\%; chỉ SFT (không GRPO) cũng kém hơn.
+
+\begin{nhanxet}
+\textbf{Điểm mạnh:} mô hình hóa tường minh mâu thuẫn giữa các phương thức bằng quan hệ có kiểu; phần thưởng RL nhắm vào chất lượng quá trình gọi công cụ; chuyển giao tốt sang thành phố mới; so sánh với nhiều chiến lược multi-agent aggregation cho thấy thiết kế cộng tác quan trọng. \textbf{Hạn chế:} giai đoạn ``debate'' là bộ tổng hợp GNN/GRU cần nhãn, không phải debate bằng ngôn ngữ; dữ liệu nhỏ (khoảng 400 điểm kiểm thử) và không có kiểm định thống kê; mô tả văn bản được GPT-4o sinh từ chính ảnh vệ tinh nên các phương thức không độc lập; tìm kiếm web có thể rò rỉ thông tin tiên nghiệm; không có phân tích chi phí.
+\end{nhanxet}
+
+% ---------------------------------------------------------------------
+\subsection{So sánh trong nhóm: MAC-RRG và UrbanAgent}
+\label{sec:cmp-app}
+
+Hai bài ứng dụng ở hai miền khác nhau nhưng có cùng cấu trúc ``nhiều nguồn bằng chứng $\to$ nhiều agent $\to$ tổng hợp''. Bảng~\ref{tab:cmp-g4} cho thấy mức độ ``đa agent'' của hai bài khác nhau đáng kể.
+
+UrbanAgent gần với một \MAS{} thực sự hơn: các agent tự chủ dùng công cụ và mâu thuẫn giữa chúng được mô hình hoá thành quan hệ. MAC-RRG thực chất là một hệ RAG hai nguồn được đặt tên theo khung đa agent. Điều này gợi ý rằng giá trị của cộng tác đa agent trong ứng dụng chuyên ngành đến chủ yếu từ việc \emph{làm rõ và xử lý mâu thuẫn giữa các nguồn bằng chứng}, chứ không chỉ từ việc có nhiều nguồn.
+
+\begin{table}[H]
+\centering
+\small
+\caption{So sánh MAC-RRG và UrbanAgent.}
+\label{tab:cmp-g4}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y Y}
+\toprule
+\textbf{Tiêu chí} & \textbf{MAC-RRG} & \textbf{UrbanAgent} \\
+\midrule
+Miền ứng dụng & Y tế: báo cáo X-quang ngực & Đô thị: carbon, dân số, GDP \\
+Dữ liệu đầu vào & Ảnh X-quang + KG + kho văn bản & Ảnh vệ tinh, văn bản, POI, mô hình 3D \\
+Bản chất agent & Mô-đun retrieval tất định & VLM dùng công cụ (Qwen3-VL-4B) \\
+Agent có tự quyết định? & Không & Có (chọn công cụ, số lượt gọi) \\
+Cơ chế tổng hợp & Ghép token tri thức vào tiền tố LLM & Đồ thị quan hệ 3 loại cạnh + GRU + final judge \\
+Xử lý mâu thuẫn giữa nguồn & Không có & Tường minh (rectification edge) \\
+Huấn luyện & LLM sinh báo cáo & SFT + GRPO cho agent; GNN cho tổng hợp \\
+Kiểm tra tổng quát hoá & Không & Có (thành phố chưa thấy) \\
+Mức cải thiện & Nhỏ (BLEU-4 +0.004 so với base) & Trung bình (+8.1\% $R^2$) \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,277 @@
+% !TEX program = xelatex
+% Biên dịch bằng XeLaTeX (khuyến nghị) để hỗ trợ tiếng Việt.
+% Trên Overleaf: Menu -> Settings -> Compiler -> XeLaTeX.
+\documentclass[a4paper,13pt,twoside]{report}
+\usepackage{scrextend}
+\changefontsizes{13pt}
+
+\usepackage{fontspec}        % cần XeLaTeX/LuaLaTeX
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setotherlanguage{english}
+% Font kiểu Times New Roman, hỗ trợ tiếng Việt — nạp theo tên file để chạy được
+% cả trên máy local (TeX Live) lẫn Overleaf, không phụ thuộc font hệ thống.
+\setmainfont{texgyretermes}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+
+\usepackage[top=2cm, bottom=2cm, left=3.5cm, right=2.5cm]{geometry}
+\usepackage{indentfirst}     % thụt đầu dòng cả đoạn đầu tiên
+\usepackage{setspace}        % giãn dòng
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[table]{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black}
+\usepackage{xurl}            % cho phép ngắt dòng URL/đường dẫn tại mọi vị trí
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc}
+
+% ----- Màu dùng cho các nhóm nghiên cứu và hộp nhận xét -----
+\definecolor{gSafe}{HTML}{C0392B}
+\definecolor{gOrch}{HTML}{2471A3}
+\definecolor{gComm}{HTML}{1E8449}
+\definecolor{gApp}{HTML}{B9770E}
+\definecolor{boxbg}{HTML}{F4F6F7}
+
+\newtcolorbox{nhanxet}[1][Nhận xét]{breakable,colback=boxbg,colframe=black!45,
+  boxrule=0.5pt,arc=2pt,left=6pt,right=6pt,top=4pt,bottom=4pt,
+  fonttitle=\bfseries\small,title=#1}
+
+% ----- Kiểu cột bảng -----
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+% ----- Viết tắt -----
+\newcommand{\MAS}{MAS}
+\newcommand{\LLM}{LLM}
+
+% ----- Giãn dòng, thụt đầu dòng (theo chuẩn đồ án) -----
+\onehalfspacing
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{15pt}
+% Không kéo giãn khoảng cách giữa các khối chỉ để lấp đầy chiều cao trang.
+\raggedbottom
+% Tiếng Việt không ngắt-vần được: cho phép giãn khoảng trắng để tránh tràn lề
+\setlength{\emergencystretch}{3em}
+\setcounter{secnumdepth}{3}     % đánh số tới subsubsection
+\counterwithin{figure}{chapter} % Hình 1.1, 1.2, ...
+\counterwithin{table}{chapter}  % Bảng 1.1, 1.2, ...
+\setlist{nosep}
+
+% ----- Cho phép bảng/hình trôi linh hoạt để tránh khoảng trắng lớn -----
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+% Trang chỉ có bảng/hình: canh lên đầu trang thay vì canh giữa
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt plus 2pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+
+% ----- Header/Footer -----
+\setlength{\headheight}{15pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[RE,LO]{\leftmark}
+\fancyfoot[RE,LO]{\thepage}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+% ----- Định dạng tiêu đề chương/mục theo chuẩn HUST -----
+\titleformat{\chapter}[hang]{\centering\bfseries}{CHƯƠNG \thechapter.\ }{0pt}{}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titleformat{\section}[hang]{\bfseries}{\thechapter.\arabic{section}\quad}{0pt}{}
+\titlespacing{\section}{0pt}{\parskip}{0.5\parskip}
+
+\titleformat{\subsection}[hang]{\bfseries}{\thechapter.\arabic{section}.\arabic{subsection}\quad}{0pt}{}
+\titlespacing{\subsection}{15pt}{\parskip}{0.5\parskip}
+
+\renewcommand\thesubsubsection{\alph{subsubsection}}
+\titleformat{\subsubsection}[hang]{\bfseries}{\alph{subsubsection})\ }{0pt}{}
+\titlespacing{\subsubsection}{30pt}{\parskip}{0.5\parskip}
+
+% polyglossia ghi đè tên mục khi vào tài liệu, nên đặt lại trong captionsvietnamese
+\gappto\captionsvietnamese{\renewcommand*\contentsname{MỤC LỤC}\renewcommand*\bibname{TÀI LIỆU THAM KHẢO}}
+
+% ----- Định dạng mục lục (dấu chấm dẫn, tiền tố CHƯƠNG) -----
+\titlecontents{chapter}[0em]
+  {\addvspace{0.3cm}\bfseries}
+  {CHƯƠNG \thecontentslabel.\quad}
+  {}
+  {\titlerule*[0.3pc]{.}\contentspage}
+\titlecontents{section}[1.4em]
+  {\addvspace{0.1cm}}
+  {\thecontentslabel\quad}
+  {}
+  {\titlerule*[0.3pc]{.}\contentspage}
+\titlecontents{subsection}[2.8em]
+  {}
+  {\thecontentslabel\quad}
+  {}
+  {\titlerule*[0.3pc]{.}\contentspage}
+
+\begin{document}
+
+% ===================== TRANG BÌA =====================
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+
+{\textbf{\large{ĐẠI HỌC BÁCH KHOA HÀ NỘI}}}\\[4cm]
+
+{\textbf{\huge{BÁO CÁO BÀI TẬP LỚN}}}\\[1cm]
+{\textbf{\Large{Multi-Agent Systems và Collaborative Reasoning}}}\\[1cm]
+
+{\textbf{\large{TRẦN XUÂN HƯƠNG}}}\\
+{\textbf{\large{VŨ TÙNG DƯƠNG}}}\\
+{\textbf{\large{PHẠM VIỆT DŨNG}}}\\
+{\textbf{\large{LÊ VĂN ĐỨC}}}\\[0.5cm]
+
+{\textbf{\large{Học phần: Xử lý ngôn ngữ tự nhiên}}}\\
+
+\vspace{2cm}
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{ll}
+\multicolumn{1}{c}{\textbf{Giảng viên hướng dẫn:}} & PGS.TS. Lê Thanh Hương \hspace{0.5cm} \underline{\hspace{1.8cm}}  \\[0.5cm]
+  & \multicolumn{1}{r}{Chữ kí GVHD}     \\[0.5cm]
+\textbf{Mã học phần:} & IT4772                 \\[0.5cm]
+\textbf{Trường:} & Công nghệ Thông tin và Truyền thông \\[3cm]
+\multicolumn{2}{c}{\textbf{HÀ NỘI, 10/2026}}
+\end{tabular}%
+}
+\end{table}
+\end{center}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+% ===================== LỜI CẢM ƠN =====================
+\thispagestyle{fancy}
+\begin{center}
+\LARGE\textbf{LỜI CẢM ƠN}
+\end{center}
+\vspace{1cm}
+Nhóm chúng em xin gửi lời cảm ơn chân thành tới \textbf{PGS.TS. Lê Thanh Hương} đã tận tình giảng
+dạy, góp ý và định hướng cho nhóm trong suốt quá trình học tập và thực hiện bài tập lớn của học phần
+Xử lý ngôn ngữ tự nhiên. Chúng em cũng xin cảm ơn các thầy cô trong Trường Công nghệ Thông tin và
+Truyền thông -- Đại học Bách khoa Hà Nội đã trang bị cho chúng em những kiến thức nền tảng quý báu.
+Do thời gian và kiến thức còn hạn chế, báo cáo không tránh khỏi thiếu sót; nhóm rất mong nhận được
+sự góp ý của cô để hoàn thiện hơn. Chúng em xin chân thành cảm ơn!
+\newpage
+
+% ===================== TÓM TẮT =====================
+\thispagestyle{fancy}
+\begin{center}
+\Large\textbf{TÓM TẮT NỘI DUNG BÁO CÁO}
+\end{center}
+\vspace{1cm}
+LLM-based Multi-Agent Systems (\MAS) cho phép nhiều agent chuyên biệt cùng phân rã, trao đổi và
+tổng hợp lập luận để giải các bài toán mà một mô hình đơn lẻ khó xử lý tốt. Báo cáo khảo sát, phân
+tích và so sánh tám nghiên cứu mới nhất trên arXiv (tháng 5 -- tháng 9/2026) về chủ đề
+\emph{Multi-Agent Systems và Collaborative Reasoning}, phân loại thành bốn hướng:
+(i) safety \& robustness (MIRAGE, TIDE); (ii) orchestration \& control (ProgRouter, HalluProp);
+(iii) communication \& interaction (DAIN, AGENT-RADAR); (iv) domain applications (MAC-RRG,
+UrbanAgent). Với mỗi nghiên cứu, báo cáo trình bày bài toán, phương pháp, thiết lập thực nghiệm,
+kết quả định lượng chính và đánh giá phản biện; sau đó so sánh có hệ thống theo phương pháp, dữ
+liệu, kết quả, chi phí, ưu điểm, hạn chế và phạm vi áp dụng.
+
+Ba nhận định chính: (1) \emph{communication graph} là đối tượng trung tâm của hầu hết các nghiên
+cứu; (2) sự lan truyền của lỗi, hallucination và thông tin sai qua các communication edge là rủi ro
+cốt lõi, và thảo luận nhiều vòng có xu hướng khuếch đại sai lệch thay vì sửa sai; (3) khái niệm
+``agent'' đang được dùng rất rộng, gây khó khăn cho việc so sánh. Cuối cùng, báo cáo chỉ ra các
+khoảng trống nghiên cứu và đề xuất một số hướng phát triển.
+
+\vspace{6pt}
+\noindent\textbf{Từ khóa:} multi-agent systems, collaborative reasoning, large language models,
+agent orchestration, communication graph, AI safety, hallucination propagation.
+\newpage
+
+% ===================== MỤC LỤC, DANH MỤC =====================
+\tableofcontents
+\newpage
+
+\renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{Hình~\oldnumberline}
+\listoffigures}
+\newpage
+
+\renewcommand{\listtablename}{DANH MỤC BẢNG BIỂU}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{Bảng~\oldnumberline}
+\listoftables}
+\newpage
+
+% ===================== DANH MỤC TỪ VIẾT TẮT =====================
+\thispagestyle{fancy}
+\begin{center}
+\Large\textbf{DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT}
+\end{center}
+\vspace{0.3cm}
+\renewcommand{\arraystretch}{1.3}
+\begin{center}
+\begin{tabular}{p{2.0cm} >{\raggedright\arraybackslash}p{4.4cm} >{\raggedright\arraybackslash}p{7.0cm}}
+\toprule
+\textbf{Viết tắt} & \textbf{Tiếng Anh} & \textbf{Ý nghĩa} \\
+\midrule
+LLM   & Large Language Model           & Mô hình ngôn ngữ lớn \\
+MAS   & Multi-Agent System             & Hệ thống gồm nhiều agent cùng phối hợp giải bài toán \\
+agent & Agent                          & Thực thể dùng LLM (hoặc mô-đun) nhận đầu vào, suy luận và tạo đầu ra/hành động \\
+DAG   & Directed Acyclic Graph         & Đồ thị có hướng không chu trình \\
+RAG   & Retrieval-Augmented Generation & Sinh văn bản có bổ sung tri thức truy xuất \\
+KG    & Knowledge Graph                & Đồ thị tri thức \\
+MoE   & Mixture-of-Experts             & Kiến trúc chọn một tập con expert cho mỗi đầu vào \\
+PID   & Partial Information Decomposition & Phân rã thông tin thành uniqueness, redundancy, synergy \\
+SFT   & Supervised Fine-Tuning         & Tinh chỉnh có giám sát \\
+GRPO  & Group Relative Policy Optimization & Thuật toán học tăng cường dùng advantage chuẩn hoá theo nhóm \\
+GNN   & Graph Neural Network           & Mạng nơ-ron trên đồ thị \\
+SPA   & Selective Prompt Anchoring     & Kỹ thuật attention steering nhấn mạnh một phần prompt \\
+CIA   & Communication Inference Attack & Tấn công suy ra topology của MAS \\
+AUROC & Area Under the ROC Curve       & Diện tích dưới đường cong ROC \\
+POI   & Point of Interest              & Điểm quan tâm trên bản đồ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\renewcommand{\arraystretch}{1}
+\newpage
+
+\pagenumbering{arabic}
+
+\input{chapters/01_introduction}
+\input{chapters/02_background}
+\input{chapters/03_taxonomy}
+\input{chapters/04_papers}
+\input{chapters/05_comparison}
+\input{chapters/06_gaps}
+\input{chapters/07_conclusion}
+\input{chapters/08_contribution}
+
+\input{chapters/09_references}
+
+\end{document}

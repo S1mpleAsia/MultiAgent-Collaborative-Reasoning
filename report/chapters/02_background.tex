@@ -1,0 +1,93 @@
+\chapter{KIẾN THỨC NỀN}
+\label{chap:background}
+
+\section{LLM-based agent}
+
+Một \emph{agent} dựa trên \LLM{} là một thực thể nhận đầu vào (câu hỏi, quan sát, thông điệp từ agent khác), suy luận bằng \LLM{} và tạo ra hành động hoặc thông điệp đầu ra. Agent thường được định nghĩa bởi ba thành phần: (i) \emph{backbone LLM}; (ii) \emph{role/system prompt} mô tả chuyên môn và trách nhiệm; (iii) tùy chọn \emph{công cụ} (tool) như tìm kiếm web, trình thông dịch mã, retrieval tài liệu. Mô hình ReAct~\cite{react} là khuôn mẫu phổ biến, trong đó agent xen kẽ giữa bước \emph{reasoning} và bước \emph{action} (gọi công cụ), rồi cập nhật dựa trên \emph{quan sát} trả về.
+
+\section{MAS như một communication graph}
+
+Phần lớn các nghiên cứu gần đây mô hình hóa \MAS{} như một đồ thị có hướng
+\begin{equation}
+  \mathcal{G} = (\mathcal{V}, \mathcal{E}),
+\end{equation}
+trong đó mỗi đỉnh $v_i \in \mathcal{V}$ là một agent và cạnh $(v_j \to v_i) \in \mathcal{E}$ cho biết đầu ra của $v_j$ được chuyển làm ngữ cảnh đầu vào cho $v_i$. Với câu hỏi $q$, role prompt $p_i$ và tập đầu ra của các agent đứng trước $O_i = \{r_j : (v_j \to v_i)\in\mathcal{E}\}$, agent $v_i$ sinh ra
+\begin{equation}
+  r_i = \mathrm{LLM}(p_i,\; q,\; O_i).
+  \label{eq:agent}
+\end{equation}
+Hệ có thể chạy nhiều \emph{vòng} (round): ở vòng $t$, agent có thể đọc toàn bộ đầu ra của các vòng trước. Một decision agent (decision node) tổng hợp và trả lời. Cách nhìn này thống nhất được nhiều kiểu tổ chức khác nhau và là nền tảng của các phương pháp \emph{topology optimization} như GPTSwarm~\cite{gptswarm}, G-Designer~\cite{gdesigner} hay \emph{cắt tỉa} giao tiếp như AgentPrune~\cite{agentprune}.
+
+\section{Các mô hình cộng tác phổ biến}
+
+Bảng~\ref{tab:paradigms} tóm tắt các mô hình cộng tác thường gặp; các nghiên cứu được khảo sát sử dụng hầu hết các mô hình này.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Các mô hình tổ chức cộng tác trong \MAS{} dựa trên \LLM.}
+\label{tab:paradigms}
+\begin{tabularx}{\textwidth}{L{3.1cm} Y L{3.2cm}}
+\toprule
+\textbf{Mô hình} & \textbf{Mô tả} & \textbf{Ví dụ} \\
+\midrule
+Debate & Nhiều agent đưa ra câu trả lời, đọc câu trả lời của nhau và cập nhật qua nhiều vòng; kết quả là đồng thuận hoặc bỏ phiếu đa số. & Du et al.~\cite{du2024debate}; TIDE (\#4) \\
+Phân cấp / coordinator & Một coordinator agent (coordinator/orchestrator) lập kế hoạch, giao việc cho các agent thực thi và theo dõi tiến độ. & Magentic-One~\cite{magenticone}; ProgRouter (\#3) \\
+Dây chuyền vai trò & Các agent chuyên biệt xử lý tuần tự như một quy trình phần mềm (phân tích -- thiết kế -- lập trình -- kiểm thử). & MetaGPT~\cite{metagpt}; MAC-RRG (\#2) \\
+Đồ thị tùy ý / tối ưu được & Topology là đồ thị (ngẫu nhiên, phân lớp, đầy đủ) có thể học hoặc cắt tỉa. & GPTSwarm, G-Designer, AgentPrune; HalluProp (\#5), AGENT-RADAR (\#8) \\
+Router & Một bộ điều khiển chọn agent hoặc mô hình nào được kích hoạt cho từng đầu vào/bước. & MoE; ProgRouter (\#3), DAIN (\#7) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Các thách thức chính của MAS}
+
+\subsection{Chi phí và hiệu quả}
+Mỗi agent là một hoặc nhiều lần gọi \LLM, và ngữ cảnh tích lũy qua các vòng làm số token tăng nhanh. Chi phí có thể đo bằng token, tiền API, năng lượng GPU hay độ trễ. Các phương pháp \emph{model routing} như RouteLLM hay các phương pháp \emph{cascade} truyền thống chỉ ra quyết định một lần cho mỗi câu hỏi, trong khi quy trình multi-agent cần chuỗi quyết định phụ thuộc trạng thái~\cite{p3progrouter}.
+
+\subsection{Quá tải ngữ cảnh}
+Khi lịch sử hội thoại dài, \LLM{} có xu hướng bỏ sót thông tin nằm ở giữa ngữ cảnh -- hiện tượng ``lost in the middle''~\cite{lostmiddle}. Trong \MAS{}, các agent còn lặp lại nội dung của nhau, khiến mô tả nhiệm vụ gốc và bằng chứng quan trọng bị ``chôn vùi''. Các giải pháp thường dùng là tóm tắt định kỳ (compaction) hoặc cắt tỉa agent/cạnh (AgentPrune, AgentDropout), nhưng cả hai đều làm mất thông tin~\cite{p8radar}.
+
+\subsection{Lan truyền lỗi, hallucination và thông tin sai}
+Theo phương trình~\eqref{eq:agent}, đầu ra của một agent trở thành đầu vào của agent khác. Do đó, một hallucination hoặc một thông tin sai cố ý có thể \emph{lan truyền} theo các cạnh, được các agent khác tiếp nhận, lặp lại và khuếch đại, dẫn tới cascading failure ở cấp hệ thống~\cite{p5halluprop,p4tide}. Nghiên cứu tâm lý học nhóm ở người về ``hidden profile''~\cite{stasser1985} cho thấy các nhóm có xu hướng ưu tiên thông tin được chia sẻ chung và bỏ qua thông tin riêng của từng thành viên; câu hỏi tương tự đặt ra cho \MAS.
+
+\subsection{Bảo mật cấu trúc}
+Topology của \MAS{} (ai nói chuyện với ai) quyết định hiệu năng và thường là kết quả của quá trình tối ưu tốn kém, nên có thể coi là intellectual property. Đồng thời, biết được cấu trúc giúp kẻ tấn công xác định key agent để tấn công có chủ đích (jailbreak, prompt injection). Các nghiên cứu gần đây cho thấy cấu trúc này có thể bị suy ra chỉ qua truy vấn hộp đen~\cite{p1mirage}.
+
+\section{Một số kỹ thuật liên quan}
+
+\begin{itemize}
+  \item \textbf{Mixture-of-Experts (MoE):} một bộ cổng (gating) chọn một tập con expert cho từng đầu vào. Đây là nền tảng ý tưởng của DAIN (\#7), nơi các ``agent'' thực chất là các mô-đun expert có trao đổi thông điệp.
+  \item \textbf{Retrieval-Augmented Generation (RAG):} bổ sung tri thức retrieved từ kho tài liệu hoặc knowledge graph vào ngữ cảnh sinh. MAC-RRG (\#2) dùng hai ``agent'' retrieval tri thức có cấu trúc và phi cấu trúc.
+  \item \textbf{Học tăng cường cho tool-using agent:} sau giai đoạn SFT, mô hình được tối ưu bằng các thuật toán như GRPO với phần thưởng về kết quả, định dạng và quá trình gọi công cụ. UrbanAgent (\#6) áp dụng hướng này.
+  \item \textbf{Attention steering:} điều chỉnh logit hoặc trọng số chú ý của \LLM{} tại thời điểm suy luận để nhấn mạnh một số đoạn văn bản mà không cần huấn luyện lại, ví dụ SPA hay PASTA. AGENT-RADAR (\#8) dựa trên kỹ thuật này.
+\end{itemize}
+
+\section{Các độ đo đánh giá thường gặp}
+\label{sec:metrics}
+
+Tám nghiên cứu dùng nhiều độ đo khác nhau tùy theo bài toán. Bảng~\ref{tab:metrics} tóm tắt các độ đo xuất hiện trong báo cáo để người đọc có thể diễn giải đúng các con số ở các chương sau.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Các độ đo đánh giá được sử dụng trong tám nghiên cứu.}
+\label{tab:metrics}
+\begin{tabularx}{\textwidth}{L{3.2cm} Y L{2.8cm}}
+\toprule
+\textbf{Độ đo} & \textbf{Ý nghĩa} & \textbf{Dùng trong} \\
+\midrule
+Accuracy, F1 & Tỉ lệ trả lời đúng; F1 cân bằng precision và recall (dùng cho QA nhiều bước) & AGENT-RADAR, ProgRouter, DAIN, HalluProp \\
+AUC / AUROC & Khả năng phân biệt hai lớp, 0.5 là ngẫu nhiên, 1.0 là hoàn hảo & MIRAGE (thấp là tốt), HalluProp (cao là tốt) \\
+Hit@k, Precision@k & Agent thật sự lỗi có nằm trong top-$k$ agent bị dự báo rủi ro nhất không & HalluProp \\
+BLEU, ROUGE-L, METEOR, CIDEr & Mức trùng khớp n-gram giữa văn bản sinh ra và văn bản tham chiếu & MAC-RRG \\
+Clinical efficacy (CE) & Precision/Recall/F1 của các nhãn bệnh lý trích từ báo cáo sinh ra & MAC-RRG \\
+$R^2$, Spearman $\rho$ & Mức giải thích phương sai và tương quan hạng của dự đoán hồi quy & UrbanAgent \\
+Năng lượng (J), thời gian (s) & Chi phí vận hành thực tế của hệ thống & ProgRouter, AGENT-RADAR, HalluProp \\
+Tỉ lệ đa số đúng & Tỉ lệ lần chạy mà đa số agent trả lời đúng & TIDE \\
+Propagation order & Số bước chuyển tiếp của một bằng chứng từ nguồn gốc đến agent tiếp nhận & TIDE \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Lưu ý là cùng một độ đo có thể mang ý nghĩa ngược nhau: với MIRAGE, AUC là độ chính xác của \emph{kẻ tấn công} nên càng thấp càng tốt; với HalluProp, AUROC là độ chính xác của \emph{bộ dự báo rủi ro} nên càng cao càng tốt.
